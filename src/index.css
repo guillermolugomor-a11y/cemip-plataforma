@@ -1,0 +1,162 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-apple-bg: 255 255 255;
+    --color-apple-secondary: 245 245 247;
+    --color-apple-tertiary: 242 242 247;
+    --color-apple-text: 29 29 31;
+    --color-apple-text-secondary: 110 110 115;
+    --color-apple-text-tertiary: 142 142 147;
+    --color-apple-blue: 19 88 255;
+    --color-apple-green: 40 205 65;
+    --color-apple-red: 255 59 48;
+    --color-apple-black: 28 28 30;
+    --color-apple-separator: 229 229 235;
+    --color-apple-slate: 249 250 251;
+  }
+
+  .dark {
+    --color-apple-bg: 0 0 0;
+    --color-apple-secondary: 28 28 30;
+    --color-apple-tertiary: 44 44 46;
+    --color-apple-text: 245 245 247;
+    --color-apple-text-secondary: 174 174 178;
+    --color-apple-text-tertiary: 99 99 102;
+    --color-apple-blue: 10 132 255;
+    --color-apple-green: 48 209 88;
+    --color-apple-red: 255 69 58;
+    --color-apple-black: 245 245 247;
+    --color-apple-separator: 56 56 58;
+    --color-apple-slate: 10 10 10;
+  }
+
+  body {
+    @apply font-sans antialiased bg-apple-slate text-apple-text selection:bg-apple-blue/10 selection:text-apple-blue transition-colors duration-300;
+  }
+}
+
+@layer components {
+  .metric-large {
+    @apply text-[34px] font-bold tracking-tight leading-none tabular-nums;
+  }
+
+  .description-small {
+    @apply text-[12px] font-medium text-apple-text-tertiary tracking-tight;
+  }
+
+  .apple-card {
+    @apply bg-apple-bg border border-apple-separator/30 rounded-apple-xl shadow-apple-soft transition-all duration-500 overflow-hidden;
+  }
+
+  .glass-effect {
+    @apply bg-apple-bg/75 backdrop-blur-2xl border border-white/20 shadow-apple-huge;
+  }
+
+  .sidebar-item {
+    @apply flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-300 text-apple-text-tertiary hover:text-apple-black hover:bg-apple-slate active:scale-95 text-[13.5px] font-medium;
+  }
+
+  .sidebar-item-active {
+    @apply text-apple-bg bg-apple-black font-bold shadow-apple-medium hover:opacity-95 transition-all;
+  }
+
+  .apple-button {
+    @apply px-6 py-2.5 rounded-xl font-bold transition-all duration-300 active:scale-[0.98] text-[12px] flex items-center justify-center gap-2 uppercase tracking-wide cursor-pointer;
+  }
+
+  .apple-button-primary {
+    @apply bg-apple-black text-apple-bg hover:shadow-apple-medium disabled:opacity-40;
+  }
+
+  .apple-button-secondary {
+    @apply bg-apple-bg border border-apple-separator/40 text-apple-black hover:bg-apple-slate hover:shadow-apple-soft shadow-none;
+  }
+
+  .section-divider {
+    @apply border-b border-apple-separator/30;
+  }
+
+  /* Support for tabular numbers */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-apple-separator/50 rounded-full hover:bg-apple-separator transition-colors;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* Accounting / Form utilities */
+  .label-xs {
+    @apply text-[10px] font-bold uppercase tracking-[0.15em] text-apple-text-tertiary ml-0.5 mb-1;
+  }
+
+  .input-field {
+    @apply bg-apple-slate/50 border border-apple-separator/40 rounded-xl px-4 py-3 text-[13px] font-medium text-apple-black outline-none focus:ring-4 focus:ring-apple-blue/5 focus:border-apple-blue/20 transition-all placeholder:text-apple-text-tertiary/50;
+  }
+}
+
+@keyframes apple-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse-soft {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.animate-apple {
+  animation: apple-in 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Global scroll smoothing */
+html {
+  scroll-behavior: smooth;
+}
+/* Remove Recharts default black borders */
+.recharts-cartesian-grid-bg,
+.recharts-cartesian-grid rect,
+.recharts-surface {
+  stroke: none !important;
+  outline: none !important;
+}
