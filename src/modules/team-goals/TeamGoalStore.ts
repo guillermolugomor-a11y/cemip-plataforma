@@ -100,8 +100,8 @@ export const useTeamGoalStore = create<TeamGoalState>()((set, get) => ({
   },
 
   subscribeToChanges: () => {
-    const channel = supabase
-      .channel('realtime_team_goals')
+    const channel = (supabase
+      .channel('realtime_team_goals') as any)
       .on(
         'postgres_changes',
         { event: '*', scheme: 'public', table: 'team_goals' },
@@ -134,8 +134,8 @@ export const useTeamGoalStore = create<TeamGoalState>()((set, get) => ({
     try {
       const { subtasks, comments, attachments, ...mainGoal } = goal;
       
-      const { data: newGoalData, error } = await supabase
-        .from('team_goals')
+      const { data: newGoalData, error } = await (supabase
+        .from('team_goals') as any)
         .insert([{
           title: mainGoal.title,
           indicator: mainGoal.indicator,
@@ -154,19 +154,19 @@ export const useTeamGoalStore = create<TeamGoalState>()((set, get) => ({
       const goalId = resData.id;
 
       if (subtasks && subtasks.length > 0) {
-        await supabase.from('team_goal_subtasks').insert(
+        await (supabase.from('team_goal_subtasks') as any).insert(
           subtasks.map(st => ({ goal_id: goalId, title: st.title, completed: st.completed }))
         );
       }
 
       if (comments && comments.length > 0) {
-        await supabase.from('team_goal_comments').insert(
+        await (supabase.from('team_goal_comments') as any).insert(
           comments.map(c => ({ goal_id: goalId, author: c.author, content: c.text, created_at: c.date }))
         );
       }
 
       if (attachments && attachments.length > 0) {
-        await supabase.from('team_goal_attachments').insert(
+        await (supabase.from('team_goal_attachments') as any).insert(
           attachments.map(a => ({ goal_id: goalId, name: a.name, size: a.size, type: a.type, storage_path: a.storage_path || 'temp' }))
         );
       }
@@ -197,32 +197,32 @@ export const useTeamGoalStore = create<TeamGoalState>()((set, get) => ({
       if (mainUpdates.category !== undefined) dbUpdates.category = mainUpdates.category;
 
       if (Object.keys(dbUpdates).length > 0) {
-        const { error } = await supabase.from('team_goals').update(dbUpdates).eq('id', id);
+        const { error } = await (supabase.from('team_goals') as any).update(dbUpdates).eq('id', id);
         if (error) throw error;
       }
 
       if (subtasks !== undefined) {
-        await supabase.from('team_goal_subtasks').delete().eq('goal_id', id);
+        await (supabase.from('team_goal_subtasks') as any).delete().eq('goal_id', id);
         if (subtasks.length > 0) {
-          await supabase.from('team_goal_subtasks').insert(
+          await (supabase.from('team_goal_subtasks') as any).insert(
             subtasks.map((st:any) => ({ goal_id: id, title: st.title, completed: st.completed }))
           );
         }
       }
 
       if (comments !== undefined) {
-        await supabase.from('team_goal_comments').delete().eq('goal_id', id);
+        await (supabase.from('team_goal_comments') as any).delete().eq('goal_id', id);
         if (comments.length > 0) {
-          await supabase.from('team_goal_comments').insert(
+          await (supabase.from('team_goal_comments') as any).insert(
             comments.map((c:any) => ({ goal_id: id, author: c.author, content: c.text, created_at: c.date }))
           );
         }
       }
 
       if (attachments !== undefined) {
-        await supabase.from('team_goal_attachments').delete().eq('goal_id', id);
+        await (supabase.from('team_goal_attachments') as any).delete().eq('goal_id', id);
         if (attachments.length > 0) {
-          await supabase.from('team_goal_attachments').insert(
+          await (supabase.from('team_goal_attachments') as any).insert(
             attachments.map((a:any) => ({ goal_id: id, name: a.name, size: a.size, type: a.type, storage_path: a.storage_path || 'temp' }))
           );
         }
@@ -240,7 +240,7 @@ export const useTeamGoalStore = create<TeamGoalState>()((set, get) => ({
     const previousGoals = get().teamGoals;
     set(state => ({ teamGoals: state.teamGoals.filter(g => g.id !== id) }));
     try {
-      const { error } = await supabase.from('team_goals').delete().eq('id', id);
+      const { error } = await (supabase.from('team_goals') as any).delete().eq('id', id);
       if (error) throw error;
     } catch (err: any) {
       console.error('Error deleting team goal:', err);

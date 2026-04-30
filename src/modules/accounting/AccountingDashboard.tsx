@@ -416,7 +416,7 @@ export default function AccountingDashboard() {
       const pageHeight = doc.internal.pageSize.getHeight();
       const centerX = pageWidth / 2;
       const margin = 20;
-      const primaryColor = [0, 122, 255]; // Apple Blue
+      const primaryColor: [number, number, number] = [0, 122, 255]; // Apple Blue
 
       // ── Header ──
       // Logo (Placeholder text)

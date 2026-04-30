@@ -95,8 +95,8 @@ export const usePatientStore = create<PatientState>()((set, get) => ({
         school_group: p.schoolGroup,
       };
 
-      const { data, error } = await supabase
-        .from('patients')
+      const { data, error } = await (supabase
+        .from('patients') as any)
         .insert(dbPayload)
         .select()
         .single();
@@ -164,8 +164,8 @@ export const usePatientStore = create<PatientState>()((set, get) => ({
       if (updates.schoolGrade !== undefined) dbPayload.school_grade = updates.schoolGrade;
       if (updates.schoolGroup !== undefined) dbPayload.school_group = updates.schoolGroup;
 
-      const { error } = await supabase
-        .from('patients')
+      const { error } = await (supabase
+        .from('patients') as any)
         .update(dbPayload)
         .eq('id', id);
 
@@ -182,8 +182,8 @@ export const usePatientStore = create<PatientState>()((set, get) => ({
 
   deletePatient: async (id) => {
     try {
-      const { error } = await supabase
-        .from('patients')
+      const { error } = await (supabase
+        .from('patients') as any)
         .delete()
         .eq('id', id);
 

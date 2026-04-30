@@ -79,8 +79,8 @@ export const useAgendaStore = create<AgendaState>()((set, get) => ({
         is_accounting_logged: apt.isAccountingLogged || false,
       };
 
-      const { data, error } = await supabase
-        .from('appointments')
+      const { data, error } = await (supabase
+        .from('appointments') as any)
         .insert(dbPayload)
         .select()
         .single();
@@ -112,8 +112,8 @@ export const useAgendaStore = create<AgendaState>()((set, get) => ({
 
   updateStatus: async (id, status) => {
     try {
-      const { data, error } = await supabase
-        .from('appointments')
+      const { data, error } = await (supabase
+        .from('appointments') as any)
         .update({ status })
         .eq('id', id)
         .select();
@@ -135,8 +135,8 @@ export const useAgendaStore = create<AgendaState>()((set, get) => ({
 
   deleteAppointment: async (id) => {
     try {
-      const { error } = await supabase
-        .from('appointments')
+      const { error } = await (supabase
+        .from('appointments') as any)
         .delete()
         .eq('id', id);
 
@@ -164,8 +164,8 @@ export const useAgendaStore = create<AgendaState>()((set, get) => ({
       if (apt.sessionCost !== undefined) dbPayload.session_cost = apt.sessionCost;
       if (apt.isAccountingLogged !== undefined) dbPayload.is_accounting_logged = apt.isAccountingLogged;
 
-      const { error } = await supabase
-        .from('appointments')
+      const { error } = await (supabase
+        .from('appointments') as any)
         .update(dbPayload)
         .eq('id', id);
 
@@ -182,8 +182,8 @@ export const useAgendaStore = create<AgendaState>()((set, get) => ({
 
   markAppointmentsAsPaid: async (ids) => {
     try {
-      const { error } = await supabase
-        .from('appointments')
+      const { error } = await (supabase
+        .from('appointments') as any)
         .update({ is_paid: true })
         .in('id', ids);
 

@@ -106,7 +106,7 @@ export const useClinicalStore = create<ClinicalState>()((set, get) => ({
   // ── Evaluations ─────────────────────────────────
   addEvaluation: async (data) => {
     try {
-      const { data: d, error } = await supabase.from('evaluations').insert({
+      const { data: d, error } = await (supabase.from('evaluations') as any).insert({
         patient_id: data.patientId, title: data.title, date: data.date || null,
         score: data.score, status: data.status, conclusion: data.conclusion,
       }).select().single();
@@ -125,7 +125,7 @@ export const useClinicalStore = create<ClinicalState>()((set, get) => ({
       if (updates.score !== undefined) db.score = updates.score;
       if (updates.status !== undefined) db.status = updates.status;
       if (updates.conclusion !== undefined) db.conclusion = updates.conclusion;
-      const { error } = await supabase.from('evaluations').update(db).eq('id', id);
+      const { error } = await (supabase.from('evaluations') as any).update(db).eq('id', id);
       if (error) throw error;
       set(s => ({ evaluations: s.evaluations.map(e => e.id === id ? { ...e, ...updates } : e) }));
     } catch (err: any) { console.error('Error updating evaluation:', err); throw err; }
@@ -133,7 +133,7 @@ export const useClinicalStore = create<ClinicalState>()((set, get) => ({
 
   deleteEvaluation: async (id) => {
     try {
-      const { error } = await supabase.from('evaluations').delete().eq('id', id);
+      const { error } = await (supabase.from('evaluations') as any).delete().eq('id', id);
       if (error) throw error;
       set(s => ({ evaluations: s.evaluations.filter(e => e.id !== id) }));
     } catch (err: any) { console.error('Error deleting evaluation:', err); throw err; }
@@ -142,7 +142,7 @@ export const useClinicalStore = create<ClinicalState>()((set, get) => ({
   // ── Goals ───────────────────────────────────────
   addGoal: async (data) => {
     try {
-      const { data: d, error } = await supabase.from('goals').insert({
+      const { data: d, error } = await (supabase.from('goals') as any).insert({
         patient_id: data.patientId, title: data.title, indicator: data.indicator,
         progress: data.progress, status: data.status, responsible: data.responsible,
         target_date: data.targetDate || null,
@@ -163,7 +163,7 @@ export const useClinicalStore = create<ClinicalState>()((set, get) => ({
       if (updates.status !== undefined) db.status = updates.status;
       if (updates.responsible !== undefined) db.responsible = updates.responsible;
       if (updates.targetDate !== undefined) db.target_date = updates.targetDate;
-      const { error } = await supabase.from('goals').update(db).eq('id', id);
+      const { error } = await (supabase.from('goals') as any).update(db).eq('id', id);
       if (error) throw error;
       set(s => ({ goals: s.goals.map(g => g.id === id ? { ...g, ...updates } : g) }));
     } catch (err: any) { console.error('Error updating goal:', err); throw err; }
@@ -173,7 +173,7 @@ export const useClinicalStore = create<ClinicalState>()((set, get) => ({
     try {
       const promises = Object.entries(updates).map(async ([goalId, progress]) => {
         const status = progress === 100 ? 'achieved' : 'pending';
-        const { error } = await supabase.from('goals').update({ progress, status }).eq('id', goalId);
+        const { error } = await (supabase.from('goals') as any).update({ progress, status }).eq('id', goalId);
         if (error) throw error;
       });
       await Promise.all(promises);
@@ -189,7 +189,7 @@ export const useClinicalStore = create<ClinicalState>()((set, get) => ({
 
   deleteGoal: async (id) => {
     try {
-      const { error } = await supabase.from('goals').delete().eq('id', id);
+      const { error } = await (supabase.from('goals') as any).delete().eq('id', id);
       if (error) throw error;
       set(s => ({ goals: s.goals.filter(g => g.id !== id) }));
     } catch (err: any) { console.error('Error deleting goal:', err); throw err; }
@@ -198,7 +198,7 @@ export const useClinicalStore = create<ClinicalState>()((set, get) => ({
   // ── Logs ────────────────────────────────────────
   addLog: async (data) => {
     try {
-      const { data: d, error } = await supabase.from('clinical_logs').insert({
+      const { data: d, error } = await (supabase.from('clinical_logs') as any).insert({
         patient_id: data.patientId, date: data.date || null, type: data.type,
         entity: data.entity, description: data.description, by_user: data.by,
       }).select().single();
@@ -217,7 +217,7 @@ export const useClinicalStore = create<ClinicalState>()((set, get) => ({
       if (updates.entity !== undefined) db.entity = updates.entity;
       if (updates.description !== undefined) db.description = updates.description;
       if (updates.by !== undefined) db.by_user = updates.by;
-      const { error } = await supabase.from('clinical_logs').update(db).eq('id', id);
+      const { error } = await (supabase.from('clinical_logs') as any).update(db).eq('id', id);
       if (error) throw error;
       set(s => ({ logs: s.logs.map(l => l.id === id ? { ...l, ...updates } : l) }));
     } catch (err: any) { console.error('Error updating log:', err); throw err; }
@@ -225,7 +225,7 @@ export const useClinicalStore = create<ClinicalState>()((set, get) => ({
 
   deleteLog: async (id) => {
     try {
-      const { error } = await supabase.from('clinical_logs').delete().eq('id', id);
+      const { error } = await (supabase.from('clinical_logs') as any).delete().eq('id', id);
       if (error) throw error;
       set(s => ({ logs: s.logs.filter(l => l.id !== id) }));
     } catch (err: any) { console.error('Error deleting log:', err); throw err; }
@@ -234,7 +234,7 @@ export const useClinicalStore = create<ClinicalState>()((set, get) => ({
   // ── Notes ───────────────────────────────────────
   addNote: async (data) => {
     try {
-      const { data: d, error } = await supabase.from('timeline_notes').insert({
+      const { data: d, error } = await (supabase.from('timeline_notes') as any).insert({
         patient_id: data.patientId, date: data.date || null, time: data.time || null,
         content: data.content, specialist_id: data.author || null,
         template_type: data.type || 'Nota',
@@ -255,7 +255,7 @@ export const useClinicalStore = create<ClinicalState>()((set, get) => ({
       if (updates.content !== undefined) db.content = updates.content;
       if (updates.type !== undefined) db.template_type = updates.type;
       if (updates.author !== undefined) db.specialist_id = updates.author;
-      const { error } = await supabase.from('timeline_notes').update(db).eq('id', id);
+      const { error } = await (supabase.from('timeline_notes') as any).update(db).eq('id', id);
       if (error) throw error;
       set(s => ({ notes: s.notes.map(n => n.id === id ? { ...n, ...updates } : n) }));
     } catch (err: any) { console.error('Error updating note:', err); throw err; }
@@ -263,7 +263,7 @@ export const useClinicalStore = create<ClinicalState>()((set, get) => ({
 
   deleteNote: async (id) => {
     try {
-      const { error } = await supabase.from('timeline_notes').delete().eq('id', id);
+      const { error } = await (supabase.from('timeline_notes') as any).delete().eq('id', id);
       if (error) throw error;
       set(s => ({ notes: s.notes.filter(n => n.id !== id) }));
     } catch (err: any) { console.error('Error deleting note:', err); throw err; }

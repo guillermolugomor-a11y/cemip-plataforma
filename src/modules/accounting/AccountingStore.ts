@@ -174,8 +174,8 @@ export const useAccountingStore = create<AccountingState>()((set, get) => ({
         receipt_url: tx.receiptUrl || null,
       };
 
-      const { data, error } = await supabase
-        .from('transactions')
+      const { data, error } = await (supabase
+        .from('transactions') as any)
         .insert(dbPayload)
         .select()
         .single();
@@ -226,8 +226,8 @@ export const useAccountingStore = create<AccountingState>()((set, get) => ({
     }
 
     try {
-      const { error } = await supabase
-        .from('transactions')
+      const { error } = await (supabase
+        .from('transactions') as any)
         .delete()
         .eq('id', id);
 
@@ -245,8 +245,8 @@ export const useAccountingStore = create<AccountingState>()((set, get) => ({
       const tx = get().transactions.find(t => t.id === id);
       const nota = `ANULADO: ${tx?.nota || ''}`.trim();
 
-      const { error } = await supabase
-        .from('transactions')
+      const { error } = await (supabase
+        .from('transactions') as any)
         .update({ cancelled: true, nota })
         .eq('id', id);
 
@@ -274,21 +274,22 @@ export const useAccountingStore = create<AccountingState>()((set, get) => ({
         estado: 'abierta',
       };
 
-      const { data, error } = await supabase
-        .from('cajas')
+      const { data, error } = await (supabase
+        .from('cajas') as any)
         .insert(dbPayload)
         .select()
         .single();
 
       if (error) throw error;
+      const resCaja = data as any;
 
       const nuevaCaja: Caja = {
-        id: data.id,
-        tipo: data.tipo as any,
-        fechaApertura: data.fecha_apertura,
-        fondoInicial: data.fondo_inicial,
-        usuario: data.usuario || '',
-        estado: data.estado as any,
+        id: resCaja.id,
+        tipo: resCaja.tipo as any,
+        fechaApertura: resCaja.fecha_apertura,
+        fondoInicial: resCaja.fondo_inicial,
+        usuario: resCaja.usuario || '',
+        estado: resCaja.estado as any,
       };
 
       set(s => ({ cajas: [nuevaCaja, ...s.cajas], activeCajaId: nuevaCaja.id }));
@@ -322,8 +323,8 @@ export const useAccountingStore = create<AccountingState>()((set, get) => ({
 
     try {
       // 1. Cerrar la caja
-      const { error: cajaError } = await supabase
-        .from('cajas')
+      const { error: cajaError } = await (supabase
+        .from('cajas') as any)
         .update({ estado: 'cerrada' })
         .eq('id', activeCajaId);
 
@@ -346,8 +347,8 @@ export const useAccountingStore = create<AccountingState>()((set, get) => ({
         usuario: caja.usuario,
       };
 
-      const { data: corteData, error: corteError } = await supabase
-        .from('cortes')
+      const { data: corteData, error: corteError } = await (supabase
+        .from('cortes') as any)
         .insert(cortePayload)
         .select()
         .single();

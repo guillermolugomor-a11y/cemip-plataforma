@@ -78,8 +78,8 @@ export const useSpecialistStore = create<SpecialistState>()((set, get) => ({
         status: s.status,
       };
 
-      const { data, error } = await supabase
-        .from('specialists')
+      const { data, error } = await (supabase
+        .from('specialists') as any)
         .insert(dbPayload)
         .select()
         .single();
@@ -116,8 +116,8 @@ export const useSpecialistStore = create<SpecialistState>()((set, get) => ({
       if (updates.paymentValue !== undefined) dbPayload.payment_value = updates.paymentValue;
       if (updates.status !== undefined) dbPayload.status = updates.status;
 
-      const { error } = await supabase
-        .from('specialists')
+      const { error } = await (supabase
+        .from('specialists') as any)
         .update(dbPayload)
         .eq('id', id);
 
@@ -134,8 +134,8 @@ export const useSpecialistStore = create<SpecialistState>()((set, get) => ({
 
   deleteSpecialist: async (id) => {
     try {
-      const { error } = await supabase
-        .from('specialists')
+      const { error } = await (supabase
+        .from('specialists') as any)
         .delete()
         .eq('id', id);
 

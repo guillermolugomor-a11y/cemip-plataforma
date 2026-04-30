@@ -23,6 +23,9 @@ export interface Patient {
   schoolEmail?: string;
   schoolGrade?: string;
   schoolGroup?: string;
+  curp?: string;
+  firstAppointmentDate?: string;
+  firstAppointmentTime?: string;
 }
 
 export interface Appointment {
@@ -34,7 +37,7 @@ export interface Appointment {
   date: string; // YYYY-MM-DD
   time: string; // HH:mm
   type: string;
-  status: 'confirmed' | 'pending' | 'cancelled' | 'completed';
+  status: 'confirmed' | 'pending' | 'cancelled' | 'completed' | 'absent';
   isPaid?: boolean;
   sessionCost?: number;
   isAccountingLogged?: boolean;
