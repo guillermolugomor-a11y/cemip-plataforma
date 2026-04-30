@@ -66,7 +66,7 @@ export default function Login() {
             <div className="space-y-2">
               <label className="text-[10px] font-black uppercase tracking-[0.2em] text-apple-text-tertiary ml-1 opacity-70">Correo Electrónico</label>
               <div className="relative group">
-                <div className="absolute inset-0 bg-apple-blue/5 rounded-2xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-300" />
+                <div className="absolute inset-0 bg-apple-blue/5 rounded-2xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-300 pointer-events-none" />
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-apple-text-tertiary group-focus-within:text-apple-blue transition-all duration-300" />
                 <input
                   type="email"
@@ -82,7 +82,7 @@ export default function Login() {
             <div className="space-y-2">
               <label className="text-[10px] font-black uppercase tracking-[0.2em] text-apple-text-tertiary ml-1 opacity-70">Contraseña</label>
               <div className="relative group">
-                <div className="absolute inset-0 bg-apple-blue/5 rounded-2xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-300" />
+                <div className="absolute inset-0 bg-apple-blue/5 rounded-2xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-300 pointer-events-none" />
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-apple-text-tertiary group-focus-within:text-apple-blue transition-all duration-300" />
                 <input
                   type="password"
