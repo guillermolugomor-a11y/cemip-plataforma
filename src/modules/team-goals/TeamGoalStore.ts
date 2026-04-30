@@ -43,6 +43,7 @@ interface TeamGoalState {
   isLoading: boolean;
   error: string | null;
   fetchTeamGoals: () => Promise<void>;
+  subscribeToChanges: () => () => void;
   addTeamGoal: (goal: Omit<TeamGoal, 'id'>) => Promise<void>;
   updateTeamGoal: (id: string, updates: Partial<TeamGoal>) => Promise<void>;
   deleteTeamGoal: (id: string) => Promise<void>;
@@ -75,7 +76,8 @@ export const useTeamGoalStore = create<TeamGoalState>()((set, get) => ({
 
       if (error) throw error;
 
-      const mappedGoals: TeamGoal[] = (data || []).map(d => ({
+      const goalsData = data as any[] || [];
+      const mappedGoals: TeamGoal[] = goalsData.map(d => ({
         id: d.id,
         title: d.title,
         indicator: d.indicator || '',
@@ -97,11 +99,42 @@ export const useTeamGoalStore = create<TeamGoalState>()((set, get) => ({
     }
   },
 
+  subscribeToChanges: () => {
+    const channel = supabase
+      .channel('realtime_team_goals')
+      .on(
+        'postgres_changes',
+        { event: '*', scheme: 'public', table: 'team_goals' },
+        () => {
+          get().fetchTeamGoals();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', scheme: 'public', table: 'team_goal_subtasks' },
+        () => {
+          get().fetchTeamGoals();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', scheme: 'public', table: 'team_goal_comments' },
+        () => {
+          get().fetchTeamGoals();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  },
+
   addTeamGoal: async (goal) => {
     try {
       const { subtasks, comments, attachments, ...mainGoal } = goal;
       
-      const { data: newGoal, error } = await supabase
+      const { data: newGoalData, error } = await supabase
         .from('team_goals')
         .insert([{
           title: mainGoal.title,
@@ -117,7 +150,8 @@ export const useTeamGoalStore = create<TeamGoalState>()((set, get) => ({
         .single();
 
       if (error) throw error;
-      const goalId = newGoal.id;
+      const resData = newGoalData as any;
+      const goalId = resData.id;
 
       if (subtasks && subtasks.length > 0) {
         await supabase.from('team_goal_subtasks').insert(

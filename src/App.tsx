@@ -109,7 +109,7 @@ export default function App() {
   const { appointments, fetchAppointments } = useAgendaStore();
   const { fetchClinicalData } = useClinicalStore();
   const { fetchSpecialists } = useSpecialistStore();
-  const { teamGoals, fetchTeamGoals } = useTeamGoalStore();
+  const { teamGoals, fetchTeamGoals, subscribeToChanges } = useTeamGoalStore();
 
   useEffect(() => {
     initialize();
@@ -122,8 +122,11 @@ export default function App() {
       fetchClinicalData();
       fetchSpecialists();
       fetchTeamGoals();
+      
+      const unsubscribe = subscribeToChanges();
+      return () => unsubscribe();
     }
-  }, [user, fetchPatients, fetchAppointments, fetchClinicalData, fetchSpecialists, fetchTeamGoals]);
+  }, [user, fetchPatients, fetchAppointments, fetchClinicalData, fetchSpecialists, fetchTeamGoals, subscribeToChanges]);
 
   const [dismissedNotifications, setDismissedNotifications] = useState<string[]>(() => {
     try {

@@ -47,8 +47,8 @@ export const useSpecialistStore = create<SpecialistState>()((set, get) => ({
 
       if (error) throw error;
 
-      // Map from DB format to our frontend interface
-      const mapped: Specialist[] = (data || []).map(d => ({
+      const specialistsData = data as any[] || [];
+      const mapped: Specialist[] = specialistsData.map(d => ({
         id: d.id,
         name: d.name,
         email: d.email || '',
@@ -86,15 +86,16 @@ export const useSpecialistStore = create<SpecialistState>()((set, get) => ({
 
       if (error) throw error;
 
+      const resData = data as any;
       const newS: Specialist = {
-        id: data.id,
-        name: data.name,
-        email: data.email || '',
-        specialty: data.specialty || '',
-        bankInfo: data.bank_info || '',
-        paymentSchema: data.payment_schema as any,
-        paymentValue: data.payment_value || 0,
-        status: data.status as any,
+        id: resData.id,
+        name: resData.name,
+        email: resData.email || '',
+        specialty: resData.specialty || '',
+        bankInfo: resData.bank_info || '',
+        paymentSchema: resData.payment_schema as any,
+        paymentValue: resData.payment_value || 0,
+        status: resData.status as any,
       };
 
       set((state) => ({ specialists: [newS, ...state.specialists] }));

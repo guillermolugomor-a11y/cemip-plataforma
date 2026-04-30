@@ -64,7 +64,8 @@ export const useAccountingStore = create<AccountingState>()((set, get) => ({
       if (cajaRes.error) throw cajaRes.error;
       if (corteRes.error) throw corteRes.error;
 
-      const transactions: Transaction[] = (txRes.data || []).map(d => ({
+      const txData = txRes.data as any[] || [];
+      const transactions: Transaction[] = txData.map(d => ({
         id: d.id,
         date: d.date,
         timestamp: d.timestamp,
@@ -84,7 +85,8 @@ export const useAccountingStore = create<AccountingState>()((set, get) => ({
         receiptUrl: d.receipt_url || undefined,
       }));
 
-      const cajas: Caja[] = (cajaRes.data || []).map(d => ({
+      const cajasData = cajaRes.data as any[] || [];
+      const cajas: Caja[] = cajasData.map(d => ({
         id: d.id,
         tipo: d.tipo as 'semanal' | 'mensual',
         fechaApertura: d.fecha_apertura,
@@ -93,7 +95,8 @@ export const useAccountingStore = create<AccountingState>()((set, get) => ({
         estado: d.estado as 'abierta' | 'cerrada',
       }));
 
-      const cortes: Corte[] = (corteRes.data || []).map(d => ({
+      const cortesData = corteRes.data as any[] || [];
+      const cortes: Corte[] = cortesData.map(d => ({
         id: d.id,
         tipo: d.tipo as any,
         label: d.label || '',
@@ -179,24 +182,25 @@ export const useAccountingStore = create<AccountingState>()((set, get) => ({
 
       if (error) throw error;
 
+      const resData = data as any;
       const newTx: Transaction = {
-        id: data.id,
-        date: data.date,
-        timestamp: data.timestamp,
-        amount: data.amount,
-        concept: data.concept,
-        type: data.type as any,
-        method: data.method as any,
-        category: data.category || undefined,
-        patientId: data.patient_id || undefined,
-        specialistId: data.specialist_id || undefined,
-        clinicRetention: data.clinic_retention || undefined,
-        specialistPayment: data.specialist_payment || undefined,
-        cajaId: data.caja_id || undefined,
-        userName: data.user_name || undefined,
-        cancelled: data.cancelled || false,
-        nota: data.nota || undefined,
-        receiptUrl: data.receipt_url || undefined,
+        id: resData.id,
+        date: resData.date,
+        timestamp: resData.timestamp,
+        amount: resData.amount,
+        concept: resData.concept,
+        type: resData.type as any,
+        method: resData.method as any,
+        category: resData.category || undefined,
+        patientId: resData.patient_id || undefined,
+        specialistId: resData.specialist_id || undefined,
+        clinicRetention: resData.clinic_retention || undefined,
+        specialistPayment: resData.specialist_payment || undefined,
+        cajaId: resData.caja_id || undefined,
+        userName: resData.user_name || undefined,
+        cancelled: resData.cancelled || false,
+        nota: resData.nota || undefined,
+        receiptUrl: resData.receipt_url || undefined,
         patientName: tx.patientName,
         specialistName: tx.specialistName,
       };
@@ -207,6 +211,7 @@ export const useAccountingStore = create<AccountingState>()((set, get) => ({
       throw err;
     }
   },
+
 
   async deleteTransaction(id) {
     const { transactions, cajas } = get();
@@ -349,22 +354,23 @@ export const useAccountingStore = create<AccountingState>()((set, get) => ({
 
       if (corteError) throw corteError;
 
+      const resData = corteData as any;
       const corte: Corte = {
-        id: corteData.id,
-        tipo: corteData.tipo as any,
-        label: corteData.label || '',
-        fechaInicio: corteData.fecha_inicio || '',
-        fechaFin: corteData.fecha_fin || '',
-        fondoInicial: corteData.fondo_inicial || 0,
-        totalIngresos: corteData.total_ingresos || 0,
-        totalEgresos: corteData.total_egresos || 0,
-        flujoNeto: corteData.flujo_neto || 0,
-        efectivoEsperado: corteData.efectivo_esperado || 0,
-        efectivoReal: corteData.efectivo_real || 0,
-        diferencia: corteData.diferencia || 0,
-        usuario: corteData.usuario || '',
-        fechaCorte: corteData.fecha_corte || '',
-        cajaId: corteData.caja_id || undefined,
+        id: resData.id,
+        tipo: resData.tipo as any,
+        label: resData.label || '',
+        fechaInicio: resData.fecha_inicio || '',
+        fechaFin: resData.fecha_fin || '',
+        fondoInicial: resData.fondo_inicial || 0,
+        totalIngresos: resData.total_ingresos || 0,
+        totalEgresos: resData.total_egresos || 0,
+        flujoNeto: resData.flujo_neto || 0,
+        efectivoEsperado: resData.efectivo_esperado || 0,
+        efectivoReal: resData.efectivo_real || 0,
+        diferencia: resData.diferencia || 0,
+        usuario: resData.usuario || '',
+        fechaCorte: resData.fecha_corte || '',
+        cajaId: resData.caja_id || undefined,
       };
 
       set(s => ({

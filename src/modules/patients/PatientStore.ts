@@ -34,7 +34,8 @@ export const usePatientStore = create<PatientState>()((set, get) => ({
 
       if (error) throw error;
 
-      const mapped: Patient[] = data.map(d => ({
+      const patientsData = data as any[] || [];
+      const mapped: Patient[] = patientsData.map(d => ({
         id: d.id,
         caseId: d.case_id,
         name: d.name,
@@ -102,30 +103,31 @@ export const usePatientStore = create<PatientState>()((set, get) => ({
 
       if (error) throw error;
 
+      const resData = data as any;
       const newPatient: Patient = {
-        id: data.id,
-        caseId: data.case_id,
-        name: data.name,
-        lastNamePaterno: data.last_name_paterno || undefined,
-        lastNameMaterno: data.last_name_materno || undefined,
-        age: data.age || 0,
-        gender: data.gender as any,
-        birthDate: data.birth_date || undefined,
-        tutor: data.tutor || '',
-        relationship: data.relationship || '',
-        phone: data.phone || '',
-        email: data.email || undefined,
-        consultReason: data.consult_reason || undefined,
-        initialNotes: data.initial_notes || undefined,
-        attendanceDays: data.attendance_days || [],
-        appointmentTime: data.appointment_time || undefined,
-        sessionCost: data.session_cost || 0,
-        requiresInvoice: data.requires_invoice || false,
-        schoolName: data.school_name || undefined,
-        schoolPhone: data.school_phone || undefined,
-        schoolEmail: data.school_email || undefined,
-        schoolGrade: data.school_grade || undefined,
-        schoolGroup: data.school_group || undefined,
+        id: resData.id,
+        caseId: resData.case_id,
+        name: resData.name,
+        lastNamePaterno: resData.last_name_paterno || undefined,
+        lastNameMaterno: resData.last_name_materno || undefined,
+        age: resData.age || 0,
+        gender: resData.gender as any,
+        birthDate: resData.birth_date || undefined,
+        tutor: resData.tutor || '',
+        relationship: resData.relationship || '',
+        phone: resData.phone || '',
+        email: resData.email || undefined,
+        consultReason: resData.consult_reason || undefined,
+        initialNotes: resData.initial_notes || undefined,
+        attendanceDays: resData.attendance_days || [],
+        appointmentTime: resData.appointment_time || undefined,
+        sessionCost: resData.session_cost || 0,
+        requiresInvoice: resData.requires_invoice || false,
+        schoolName: resData.school_name || undefined,
+        schoolPhone: resData.school_phone || undefined,
+        schoolEmail: resData.school_email || undefined,
+        schoolGrade: resData.school_grade || undefined,
+        schoolGroup: resData.school_group || undefined,
       };
 
       set((state) => ({ patients: [newPatient, ...state.patients] }));

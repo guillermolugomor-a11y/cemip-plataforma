@@ -42,7 +42,8 @@ export const useAgendaStore = create<AgendaState>()((set, get) => ({
 
       if (error) throw error;
 
-      const mapped: Appointment[] = data.map(d => ({
+      const aptsData = data as any[] || [];
+      const mapped: Appointment[] = aptsData.map(d => ({
         id: d.id,
         patientId: d.patient_id || '',
         patientName: '', // Will be resolved by the UI component
@@ -86,19 +87,20 @@ export const useAgendaStore = create<AgendaState>()((set, get) => ({
 
       if (error) throw error;
 
+      const resData = data as any;
       const newApt: Appointment = {
-        id: data.id,
-        patientId: data.patient_id || '',
+        id: resData.id,
+        patientId: resData.patient_id || '',
         patientName: apt.patientName || '',
-        specialistId: data.specialist_id || '',
+        specialistId: resData.specialist_id || '',
         specialistName: apt.specialistName || '',
-        date: data.date,
-        time: data.time,
-        type: data.type || '',
-        status: (data.status as Appointment['status']) || 'pending',
-        isPaid: data.is_paid || false,
-        sessionCost: data.session_cost || 0,
-        isAccountingLogged: data.is_accounting_logged || false,
+        date: resData.date,
+        time: resData.time,
+        type: resData.type || '',
+        status: (resData.status as Appointment['status']) || 'pending',
+        isPaid: resData.is_paid || false,
+        sessionCost: resData.session_cost || 0,
+        isAccountingLogged: resData.is_accounting_logged || false,
       };
 
       set((state) => ({ appointments: [newApt, ...state.appointments] }));

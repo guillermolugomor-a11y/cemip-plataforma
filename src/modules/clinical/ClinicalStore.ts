@@ -66,26 +66,30 @@ export const useClinicalStore = create<ClinicalState>()((set, get) => ({
       if (logRes.error) throw logRes.error;
       if (noteRes.error) throw noteRes.error;
 
-      const evaluations: Evaluation[] = (evalRes.data || []).map(d => ({
+      const evalData = evalRes.data as any[] || [];
+      const evaluations: Evaluation[] = evalData.map(d => ({
         id: d.id, patientId: d.patient_id || '', title: d.title,
         date: d.date || '', score: d.score, status: d.status as any,
         conclusion: d.conclusion || '',
       }));
 
-      const goals: Goal[] = (goalRes.data || []).map(d => ({
+      const goalData = goalRes.data as any[] || [];
+      const goals: Goal[] = goalData.map(d => ({
         id: d.id, patientId: d.patient_id || '', title: d.title,
         indicator: d.indicator || '', progress: d.progress || 0,
         status: d.status as any, responsible: d.responsible || '',
         targetDate: d.target_date || '',
       }));
 
-      const logs: ClinicalLog[] = (logRes.data || []).map(d => ({
+      const logData = logRes.data as any[] || [];
+      const logs: ClinicalLog[] = logData.map(d => ({
         id: d.id, patientId: d.patient_id || '', date: d.date || '',
         type: d.type as any, entity: d.entity || '',
         description: d.description || '', by: d.by_user || '',
       }));
 
-      const notes: TimelineNote[] = (noteRes.data || []).map(d => ({
+      const noteData = noteRes.data as any[] || [];
+      const notes: TimelineNote[] = noteData.map(d => ({
         id: d.id, patientId: d.patient_id || '', date: d.date || '',
         time: d.time || '', content: d.content || '',
         type: (d.template_type as any) || 'Nota',
@@ -107,7 +111,8 @@ export const useClinicalStore = create<ClinicalState>()((set, get) => ({
         score: data.score, status: data.status, conclusion: data.conclusion,
       }).select().single();
       if (error) throw error;
-      const newE: Evaluation = { id: d.id, patientId: d.patient_id || '', title: d.title, date: d.date || '', score: d.score, status: d.status as any, conclusion: d.conclusion || '' };
+      const resData = d as any;
+      const newE: Evaluation = { id: resData.id, patientId: resData.patient_id || '', title: resData.title, date: resData.date || '', score: resData.score, status: resData.status as any, conclusion: resData.conclusion || '' };
       set(s => ({ evaluations: [newE, ...s.evaluations] }));
     } catch (err: any) { console.error('Error adding evaluation:', err); throw err; }
   },
@@ -143,7 +148,8 @@ export const useClinicalStore = create<ClinicalState>()((set, get) => ({
         target_date: data.targetDate || null,
       }).select().single();
       if (error) throw error;
-      const newG: Goal = { id: d.id, patientId: d.patient_id || '', title: d.title, indicator: d.indicator || '', progress: d.progress || 0, status: d.status as any, responsible: d.responsible || '', targetDate: d.target_date || '' };
+      const resData = d as any;
+      const newG: Goal = { id: resData.id, patientId: resData.patient_id || '', title: resData.title, indicator: resData.indicator || '', progress: resData.progress || 0, status: resData.status as any, responsible: resData.responsible || '', targetDate: resData.target_date || '' };
       set(s => ({ goals: [newG, ...s.goals] }));
     } catch (err: any) { console.error('Error adding goal:', err); throw err; }
   },
@@ -197,7 +203,8 @@ export const useClinicalStore = create<ClinicalState>()((set, get) => ({
         entity: data.entity, description: data.description, by_user: data.by,
       }).select().single();
       if (error) throw error;
-      const newL: ClinicalLog = { id: d.id, patientId: d.patient_id || '', date: d.date || '', type: d.type as any, entity: d.entity || '', description: d.description || '', by: d.by_user || '' };
+      const resData = d as any;
+      const newL: ClinicalLog = { id: resData.id, patientId: resData.patient_id || '', date: resData.date || '', type: resData.type as any, entity: resData.entity || '', description: resData.description || '', by: resData.by_user || '' };
       set(s => ({ logs: [newL, ...s.logs] }));
     } catch (err: any) { console.error('Error adding log:', err); throw err; }
   },
@@ -233,10 +240,12 @@ export const useClinicalStore = create<ClinicalState>()((set, get) => ({
         template_type: data.type || 'Nota',
       }).select().single();
       if (error) throw error;
-      const newN: TimelineNote = { id: d.id, patientId: d.patient_id || '', date: d.date || '', time: d.time || '', content: d.content || '', type: (d.template_type as any) || 'Nota', author: d.specialist_id || '' };
+      const resData = d as any;
+      const newN: TimelineNote = { id: resData.id, patientId: resData.patient_id || '', date: resData.date || '', time: resData.time || '', content: resData.content || '', type: (resData.template_type as any) || 'Nota', author: resData.specialist_id || '' };
       set(s => ({ notes: [newN, ...s.notes] }));
     } catch (err: any) { console.error('Error adding note:', err); throw err; }
   },
+
 
   updateNote: async (id, updates) => {
     try {
