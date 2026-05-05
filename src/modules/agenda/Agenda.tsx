@@ -173,7 +173,7 @@ const DayStrip = ({ days, selectedDate, onSelect }: any) => (
 // Desktop Week Column
 // ────────────────────────────────────────────
 
-const DayColumn = ({ day, date, full, fullDate, fullDay, isActive, appointments, onStatusChange, onDelete, onEdit, onAddClick, patients, onQuickAdd, isFirst, isLast }: any) => {
+const DayColumn = ({ day, date, full, fullDate, fullDay, isActive, appointments, onStatusChange, onDelete, onEdit, onAddClick, patients, onQuickAdd, isFirst, isLast, showSuggestions }: any) => {
   const menuAlign = isFirst ? 'left' : 'right';
   // Encontrar pacientes que asisten este día de la semana
   // Usamos 'fullDay' que ya viene calculado ("Lunes", "Martes", etc)
@@ -203,7 +203,7 @@ const DayColumn = ({ day, date, full, fullDate, fullDay, isActive, appointments,
         </div>
 
         {/* Sugerencias Inteligentes */}
-        {suggestions.length > 0 && (
+        {showSuggestions && suggestions.length > 0 && (
           <div className="mb-4 space-y-2 animate-apple">
             <div className="flex items-center gap-2 px-1">
               <div className="w-1 h-1 bg-apple-blue rounded-full" />
@@ -335,6 +335,7 @@ export default function Agenda({ patients }: { patients: any[] }) {
   const init = React.useMemo(getInitialDates, []);
 
   const [viewMode, setViewMode] = useState<'week' | 'day'>('week');
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [selectedDate, setSelectedDate] = useState(init.s);
@@ -631,6 +632,20 @@ export default function Agenda({ patients }: { patients: any[] }) {
               <List className="w-4 h-4" strokeWidth={2} />
             </button>
           </div>
+
+          {/* Sugerencias Toggle */}
+          <button
+            onClick={() => setShowSuggestions(!showSuggestions)}
+            className={cn(
+              "px-4 py-2.5 rounded-xl text-[11px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 border shadow-sm",
+              showSuggestions 
+                ? "bg-apple-blue/10 border-apple-blue text-apple-blue" 
+                : "bg-apple-bg border-apple-separator text-apple-text-tertiary hover:bg-apple-slate"
+            )}
+          >
+            <CalendarDays className="w-4 h-4" />
+            {showSuggestions ? 'Ocultar Sugerencias' : 'Ver Sugerencias'}
+          </button>
           <div className="hidden sm:flex items-center gap-1">
             <button
               disabled={isExporting}
@@ -719,6 +734,7 @@ export default function Agenda({ patients }: { patients: any[] }) {
                       onAddClick={(date: string) => handleOpenModal(date)}
                       patients={patients}
                       onQuickAdd={handleQuickAdd}
+                      showSuggestions={showSuggestions}
                       isFirst={idx === 0}
                       isLast={idx === weekDays.length - 1}
                     />
