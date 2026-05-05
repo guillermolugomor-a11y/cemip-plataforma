@@ -40,9 +40,13 @@ export default function ExpenseModal({ isOpen, onClose }: ExpenseModalProps) {
   const [receiptBase64, setReceiptBase64] = useState<string>('');
 
   // Derived therapies to pay
-  const pendingAppointments = appointments.filter(
-    a => a.specialistId === selectedSpecialistId && a.isPaid && !a.isSpecialistPaid
-  );
+  const pendingAppointments = appointments.filter(a => {
+    const specialist = specialists.find(s => s.id === selectedSpecialistId);
+    const matchesSpecialist = a.specialistId === selectedSpecialistId || 
+                             (specialist && a.specialistName?.toLowerCase() === specialist.name.toLowerCase());
+    
+    return matchesSpecialist && a.isPaid && !a.isSpecialistPaid;
+  });
 
   // Auto-calculate amount when Nominas are selected
   useEffect(() => {
