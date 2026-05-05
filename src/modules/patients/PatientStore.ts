@@ -215,12 +215,20 @@ export const usePatientStore = create<PatientState>()((set, get) => ({
 
       console.log('PatientStore: Enviando actualización mediante UPSERT (Bypass):', dbPayload);
       
+      // Para UPSERT necesitamos incluir los campos obligatorios (NOT NULL) 
+      // aunque no hayan cambiado, para evitar errores de restricción.
+      const upsertData = {
+        id,
+        case_id: updates.caseId || existingPatient?.caseId,
+        name: updates.name || existingPatient?.name,
+        last_name_paterno: updates.lastNamePaterno || existingPatient?.lastNamePaterno,
+        gender: updates.gender || existingPatient?.gender,
+        ...dbPayload
+      };
+
       const updatePromise = (supabase
         .from('patients') as any)
-        .upsert(
-          { id, ...dbPayload }, 
-          { onConflict: 'id', count: 'none' }
-        );
+        .upsert(upsertData, { onConflict: 'id', count: 'none' });
 
       const timeoutPromise = new Promise((_, reject) => 
         setTimeout(() => reject(new Error('Tiempo de espera agotado (Timeout)')), 15000)
