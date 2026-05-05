@@ -66,71 +66,116 @@ export const useAgendaStore = create<AgendaState>()((set, get) => ({
   },
 
   addAppointment: async (apt) => {
-    try {
-      const dbPayload = {
-        patient_id: toUuidOrNull(apt.patientId),
-        specialist_id: toUuidOrNull(apt.specialistId),
-        date: apt.date,
-        time: apt.time,
-        type: apt.type,
-        status: apt.status,
-        is_paid: apt.isPaid || false,
-        session_cost: apt.sessionCost || null,
-        is_accounting_logged: apt.isAccountingLogged || false,
-      };
+    const tempId = crypto.randomUUID();
+    const optimisticApt: Appointment = { id: tempId, ...apt };
+    
+    // Optimistic update
+    set((state) => ({ appointments: [optimisticApt, ...state.appointments] }));
 
-      const { data, error } = await (supabase
-        .from('appointments') as any)
-        .insert(dbPayload)
-        .select()
-        .single();
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    let lastError: any = null;
 
-      if (error) throw error;
+    const dbPayload = {
+      patient_id: toUuidOrNull(apt.patientId),
+      specialist_id: toUuidOrNull(apt.specialistId),
+      date: apt.date,
+      time: apt.time,
+      type: apt.type,
+      status: apt.status,
+      is_paid: apt.isPaid || false,
+      session_cost: apt.sessionCost || null,
+      is_accounting_logged: apt.isAccountingLogged || false,
+    };
 
-      const resData = data as any;
-      const newApt: Appointment = {
-        id: resData.id,
-        patientId: resData.patient_id || '',
-        patientName: apt.patientName || '',
-        specialistId: resData.specialist_id || '',
-        specialistName: apt.specialistName || '',
-        date: resData.date,
-        time: resData.time,
-        type: resData.type || '',
-        status: (resData.status as Appointment['status']) || 'pending',
-        isPaid: resData.is_paid || false,
-        sessionCost: resData.session_cost || 0,
-        isAccountingLogged: resData.is_accounting_logged || false,
-      };
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        if (attempt > 1) await new Promise(r => setTimeout(r, attempt * 2000));
 
-      set((state) => ({ appointments: [newApt, ...state.appointments] }));
-    } catch (err: any) {
-      console.error('Error adding appointment:', err);
-      throw err;
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+        const response = await fetch(`${supabaseUrl}/rest/v1/appointments`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': supabaseKey,
+            'Authorization': `Bearer ${supabaseKey}`,
+            'Prefer': 'return=representation'
+          },
+          body: JSON.stringify(dbPayload),
+          signal: controller.signal
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) throw new Error(await response.text());
+        const data = await response.json();
+        const resData = data[0];
+
+        // Replace optimistic with real
+        set(state => ({
+          appointments: state.appointments.map(a => a.id === tempId ? {
+            ...a,
+            id: resData.id
+          } : a)
+        }));
+        return;
+      } catch (err: any) {
+        lastError = err;
+        console.warn(`AgendaStore: Fallo en intento ${attempt}:`, err.message);
+      }
     }
+
+    // Rollback
+    set(state => ({ appointments: state.appointments.filter(a => a.id !== tempId) }));
+    throw lastError || new Error('Error al agregar cita tras 3 reintentos');
   },
 
   updateStatus: async (id, status) => {
-    try {
-      const { data, error } = await (supabase
-        .from('appointments') as any)
-        .update({ status })
-        .eq('id', id)
-        .select();
+    const previousAppointments = get().appointments;
+    
+    // Optimistic update
+    set((state) => ({
+      appointments: state.appointments.map(a => a.id === id ? { ...a, status } : a)
+    }));
 
-      if (error) throw error;
-      
-      if (!data || data.length === 0) {
-        throw new Error('No se encontró la cita para actualizar.');
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    let lastError: any = null;
+
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        if (attempt > 1) await new Promise(r => setTimeout(r, attempt * 2000));
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+        const response = await fetch(`${supabaseUrl}/rest/v1/appointments?id=eq.${id}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': supabaseKey,
+            'Authorization': `Bearer ${supabaseKey}`,
+            'Prefer': 'return=minimal'
+          },
+          body: JSON.stringify({ status }),
+          signal: controller.signal
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) throw new Error(await response.text());
+        return;
+      } catch (err: any) {
+        lastError = err;
+        console.warn(`AgendaStore: Fallo en intento ${attempt}:`, err.message);
       }
-
-      set((state) => ({
-        appointments: state.appointments.map(a => a.id === id ? { ...a, status } : a)
-      }));
-    } catch (err: any) {
-      console.error('Error updating status:', err);
-      throw err;
     }
+
+    // Rollback
+    set({ appointments: previousAppointments });
+    throw lastError || new Error('Error al actualizar estado tras 3 reintentos');
   },
 
   deleteAppointment: async (id) => {
@@ -152,32 +197,60 @@ export const useAgendaStore = create<AgendaState>()((set, get) => ({
   },
 
   updateAppointment: async (id, apt) => {
-    try {
-      const dbPayload: any = {};
-      if (apt.patientId !== undefined) dbPayload.patient_id = toUuidOrNull(apt.patientId);
-      if (apt.specialistId !== undefined) dbPayload.specialist_id = toUuidOrNull(apt.specialistId);
-      if (apt.date !== undefined) dbPayload.date = apt.date;
-      if (apt.time !== undefined) dbPayload.time = apt.time;
-      if (apt.type !== undefined) dbPayload.type = apt.type;
-      if (apt.status !== undefined) dbPayload.status = apt.status;
-      if (apt.isPaid !== undefined) dbPayload.is_paid = apt.isPaid;
-      if (apt.sessionCost !== undefined) dbPayload.session_cost = apt.sessionCost;
-      if (apt.isAccountingLogged !== undefined) dbPayload.is_accounting_logged = apt.isAccountingLogged;
+    const previousAppointments = get().appointments;
+    
+    // Optimistic update
+    set((state) => ({
+      appointments: state.appointments.map(a => a.id === id ? { ...a, ...apt } : a)
+    }));
 
-      const { error } = await (supabase
-        .from('appointments') as any)
-        .update(dbPayload)
-        .eq('id', id);
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    let lastError: any = null;
 
-      if (error) throw error;
+    const dbPayload: any = {};
+    if (apt.patientId !== undefined) dbPayload.patient_id = toUuidOrNull(apt.patientId);
+    if (apt.specialistId !== undefined) dbPayload.specialist_id = toUuidOrNull(apt.specialistId);
+    if (apt.date !== undefined) dbPayload.date = apt.date;
+    if (apt.time !== undefined) dbPayload.time = apt.time;
+    if (apt.type !== undefined) dbPayload.type = apt.type;
+    if (apt.status !== undefined) dbPayload.status = apt.status;
+    if (apt.isPaid !== undefined) dbPayload.is_paid = apt.isPaid;
+    if (apt.sessionCost !== undefined) dbPayload.session_cost = apt.sessionCost;
+    if (apt.isAccountingLogged !== undefined) dbPayload.is_accounting_logged = apt.isAccountingLogged;
 
-      set((state) => ({
-        appointments: state.appointments.map(a => a.id === id ? { ...a, ...apt } : a)
-      }));
-    } catch (err: any) {
-      console.error('Error updating appointment:', err);
-      throw err;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        if (attempt > 1) await new Promise(r => setTimeout(r, attempt * 2000));
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+        const response = await fetch(`${supabaseUrl}/rest/v1/appointments?id=eq.${id}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': supabaseKey,
+            'Authorization': `Bearer ${supabaseKey}`,
+            'Prefer': 'return=minimal'
+          },
+          body: JSON.stringify(dbPayload),
+          signal: controller.signal
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) throw new Error(await response.text());
+        return;
+      } catch (err: any) {
+        lastError = err;
+        console.warn(`AgendaStore: Fallo en intento ${attempt}:`, err.message);
+      }
     }
+
+    // Rollback
+    set({ appointments: previousAppointments });
+    throw lastError || new Error('Error al actualizar cita tras 3 reintentos');
   },
 
   markAppointmentsAsPaid: async (ids) => {

@@ -146,70 +146,97 @@ export const useAccountingStore = create<AccountingState>()((set, get) => ({
     );
 
     if (isDuplicate) {
-      console.warn('Bloqueo de duplicidad: Ya existe una transacción idéntica registrada recientemente.');
+      console.warn('AccountingStore: Bloqueo de duplicidad activado.');
       return;
     }
 
-    // Regla de Negocio: 40% Clínica / 60% Especialista
     const clinicRetention = tx.type === 'income' ? tx.amount * 0.4 : 0;
     const specialistPayment = tx.type === 'income' ? tx.amount * 0.6 : 0;
 
-    try {
-      const dbPayload = {
-        date: tx.date,
-        timestamp,
-        amount: tx.amount,
-        concept: tx.concept,
-        type: tx.type,
-        method: tx.method,
-        category: tx.category || null,
-        patient_id: toUuidOrNull(tx.patientId),
-        specialist_id: toUuidOrNull(tx.specialistId),
-        clinic_retention: clinicRetention,
-        specialist_payment: specialistPayment,
-        caja_id: activeCajaId || null,
-        user_name: 'Dr. Alejandro',
-        cancelled: false,
-        nota: tx.nota || null,
-        receipt_url: tx.receiptUrl || null,
-      };
+    const dbPayload = {
+      date: tx.date,
+      timestamp,
+      amount: tx.amount,
+      concept: tx.concept,
+      type: tx.type,
+      method: tx.method,
+      category: tx.category || null,
+      patient_id: toUuidOrNull(tx.patientId),
+      specialist_id: toUuidOrNull(tx.specialistId),
+      clinic_retention: clinicRetention,
+      specialist_payment: specialistPayment,
+      caja_id: activeCajaId || null,
+      user_name: 'Dr. Alejandro',
+      cancelled: false,
+      nota: tx.nota || null,
+      receipt_url: tx.receiptUrl || null,
+    };
 
-      const { data, error } = await (supabase
-        .from('transactions') as any)
-        .insert(dbPayload)
-        .select()
-        .single();
+    // GUARDADO OPTIMISTA (Temporal hasta que responda la API)
+    const tempId = crypto.randomUUID();
+    const optimisticTx: Transaction = {
+      id: tempId,
+      ...tx,
+      timestamp,
+      clinicRetention,
+      specialistPayment,
+      cajaId: activeCajaId || undefined,
+      userName: 'Dr. Alejandro',
+      cancelled: false,
+    };
+    
+    set(s => ({ transactions: [optimisticTx, ...s.transactions] }));
 
-      if (error) throw error;
+    // BYPASS DIRECTO CON REINTENTOS
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    let lastError: any = null;
 
-      const resData = data as any;
-      const newTx: Transaction = {
-        id: resData.id,
-        date: resData.date,
-        timestamp: resData.timestamp,
-        amount: resData.amount,
-        concept: resData.concept,
-        type: resData.type as any,
-        method: resData.method as any,
-        category: resData.category || undefined,
-        patientId: resData.patient_id || undefined,
-        specialistId: resData.specialist_id || undefined,
-        clinicRetention: resData.clinic_retention || undefined,
-        specialistPayment: resData.specialist_payment || undefined,
-        cajaId: resData.caja_id || undefined,
-        userName: resData.user_name || undefined,
-        cancelled: resData.cancelled || false,
-        nota: resData.nota || undefined,
-        receiptUrl: resData.receipt_url || undefined,
-        patientName: tx.patientName,
-        specialistName: tx.specialistName,
-      };
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        if (attempt > 1) await new Promise(r => setTimeout(r, attempt * 2000));
 
-      set(s => ({ transactions: [newTx, ...s.transactions] }));
-    } catch (err: any) {
-      console.error('Error adding transaction:', err);
-      throw err;
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+        const response = await fetch(`${supabaseUrl}/rest/v1/transactions`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': supabaseKey,
+            'Authorization': `Bearer ${supabaseKey}`,
+            'Prefer': 'return=representation' // Necesitamos el ID real
+          },
+          body: JSON.stringify(dbPayload),
+          signal: controller.signal
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) throw new Error(await response.text());
+
+        const data = await response.json();
+        const resData = data[0];
+
+        // Reemplazar la optimista con la real
+        set(s => ({
+          transactions: s.transactions.map(t => t.id === tempId ? {
+            ...t,
+            id: resData.id,
+            timestamp: resData.timestamp,
+            receiptUrl: resData.receipt_url || undefined
+          } : t)
+        }));
+        return;
+      } catch (err: any) {
+        lastError = err;
+        console.warn(`AccountingStore: Intento ${attempt} fallido:`, err.message);
+      }
     }
+
+    // Rollback si todo falla
+    set(s => ({ transactions: s.transactions.filter(t => t.id !== tempId) }));
+    throw lastError || new Error('Error al registrar transacción tras 3 reintentos');
   },
 
 
