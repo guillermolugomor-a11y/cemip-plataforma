@@ -202,26 +202,48 @@ export const usePatientStore = create<PatientState>()((set, get) => ({
 
       if (Object.keys(dbPayload).length === 0) return;
 
-      console.log('PatientStore: Enviando actualización minimalista:', dbPayload);
-
-      const updatePromise = (supabase
-        .from('patients') as any)
-        .update(dbPayload, { count: 'none' }) // count: none ayuda a evitar lecturas extra
-        .eq('id', id);
-
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Tiempo de espera agotado (30 segundos)')), 30000)
-      );
-
-      const { error } = await Promise.race([updatePromise, timeoutPromise]) as any;
-
-      if (error) throw error;
-
+      // GUARDADO OPTIMISTA: Actualizamos la UI de inmediato para que se sienta instantáneo
+      const previousPatients = get().patients;
       set((state) => ({
         patients: state.patients.map(p => p.id === id ? { ...p, ...updates } : p)
       }));
+
+      // Lógica de REINTENTOS (3 intentos con espera incremental)
+      let lastError: any = null;
+      const maxRetries = 3;
+
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          if (attempt > 1) {
+            console.log(`PatientStore: Reintentando guardado (Intento ${attempt}/${maxRetries})...`);
+            await new Promise(resolve => setTimeout(resolve, attempt * 2000)); // Esperar 2s, 4s...
+          }
+
+          const updatePromise = (supabase
+            .from('patients') as any)
+            .update(dbPayload, { count: 'none' })
+            .eq('id', id);
+
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error(`Timeout en intento ${attempt}`)), 30000)
+          );
+
+          const { error } = await Promise.race([updatePromise, timeoutPromise]) as any;
+          if (error) throw error;
+
+          // Si llegamos aquí, el guardado fue exitoso
+          return; 
+        } catch (err: any) {
+          lastError = err;
+          console.warn(`PatientStore: Fallo en intento ${attempt}:`, err.message || err);
+        }
+      }
+
+      // Si fallaron todos los reintentos, hacemos ROLLBACK
+      set({ patients: previousPatients });
+      throw lastError || new Error('No se pudo completar el guardado tras 3 reintentos');
     } catch (err: any) {
-      toast.error(`Error de base de datos: ${err.message || err}`);
+      toast.error(`Error persistente en la base de datos: ${err.message || err}`);
       throw err;
     }
   },
