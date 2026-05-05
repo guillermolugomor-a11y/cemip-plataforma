@@ -141,6 +141,8 @@ export const usePatientStore = create<PatientState>()((set, get) => ({
   },
 
   updatePatient: async (id, updates) => {
+    console.log('PatientStore: Iniciando actualización para ID:', id);
+    console.log('PatientStore: Datos de actualización recibidos:', updates);
     try {
       const dbPayload: any = {};
       if (updates.caseId !== undefined) dbPayload.case_id = updates.caseId;
@@ -166,11 +168,14 @@ export const usePatientStore = create<PatientState>()((set, get) => ({
       if (updates.schoolGrade !== undefined) dbPayload.school_grade = updates.schoolGrade;
       if (updates.schoolGroup !== undefined) dbPayload.school_group = updates.schoolGroup;
 
+      console.log('PatientStore: Payload final para Supabase:', dbPayload);
+      
       const { error } = await (supabase
         .from('patients') as any)
         .update(dbPayload)
         .eq('id', id);
 
+      console.log('PatientStore: Respuesta de Supabase recibida. Error:', error);
       if (error) throw error;
 
       set((state) => ({

@@ -160,6 +160,7 @@ export default function RegistrationModal({ isOpen, onClose, onSave, patient, is
     } as Patient;
 
     try {
+      console.log('RegistrationModal: Llamando a onSave con datos:', savedData);
       await onSave(savedData);
       toast.success(patient ? 'Paciente actualizado' : 'Paciente registrado');
       setIsSaving(false);
