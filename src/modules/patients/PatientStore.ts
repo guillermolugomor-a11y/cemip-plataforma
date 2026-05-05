@@ -202,9 +202,11 @@ export const usePatientStore = create<PatientState>()((set, get) => ({
 
       if (Object.keys(dbPayload).length === 0) return;
 
+      console.log('PatientStore: Enviando actualización minimalista:', dbPayload);
+
       const updatePromise = (supabase
         .from('patients') as any)
-        .update(dbPayload)
+        .update(dbPayload, { count: 'none' }) // count: none ayuda a evitar lecturas extra
         .eq('id', id);
 
       const timeoutPromise = new Promise((_, reject) => 
