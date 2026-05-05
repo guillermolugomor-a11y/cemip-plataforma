@@ -148,15 +148,24 @@ export const usePatientStore = create<PatientState>()((set, get) => ({
       const dbPayload: any = {};
       
       const sanitizeAndCompare = (newValue: any, oldValue: any, isPhone = false) => {
-        // Convertir undefined a null para comparación consistente
         const val = newValue === undefined ? null : newValue;
         const old = oldValue === undefined ? null : oldValue;
 
-        // Si es string, limpiar
         if (typeof val === 'string') {
-          let cleaned = val.trim().replace(/[\u200B-\u200D\uFEFF]/g, '');
-          if (isPhone) cleaned = cleaned.replace(/[^\d+ ]/g, '');
-          // Si queda vacío, tratar como null
+          // Limpieza ultra-agresiva para evitar caracteres invisibles de Excel/Sheets
+          let cleaned = val.trim();
+          
+          if (isPhone) {
+            // Para teléfonos, eliminamos TODO lo que no sea número o +
+            cleaned = cleaned.replace(/[^\d+]/g, '');
+            console.log(`PatientStore: Teléfono limpio: "${cleaned}" (Original: "${val}")`);
+            // Log de códigos de caracteres para detectar "fantasmas"
+            const hexCodes = Array.from(val).map(c => c.charCodeAt(0).toString(16)).join(' ');
+            console.log(`PatientStore: Códigos hex del string original: ${hexCodes}`);
+          } else {
+            cleaned = cleaned.replace(/[\u0000-\u001F\u007F-\u009F\u200B-\u200D\uFEFF]/g, '');
+          }
+
           const finalVal = cleaned === '' ? null : cleaned;
           return finalVal !== old ? finalVal : undefined;
         }
