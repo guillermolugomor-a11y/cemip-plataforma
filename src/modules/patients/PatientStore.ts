@@ -213,13 +213,14 @@ export const usePatientStore = create<PatientState>()((set, get) => ({
         return;
       }
 
-      console.log('PatientStore: Enviando actualización optimizada:', dbPayload);
+      console.log('PatientStore: Enviando actualización mediante UPSERT (Bypass):', dbPayload);
       
       const updatePromise = (supabase
         .from('patients') as any)
-        .update(dbPayload)
-        .eq('id', id)
-        .select('id'); // Solo pedimos el ID de vuelta para mayor velocidad
+        .upsert(
+          { id, ...dbPayload }, 
+          { onConflict: 'id', count: 'none' }
+        );
 
       const timeoutPromise = new Promise((_, reject) => 
         setTimeout(() => reject(new Error('Tiempo de espera agotado (Timeout)')), 15000)
@@ -227,7 +228,10 @@ export const usePatientStore = create<PatientState>()((set, get) => ({
 
       const { error } = await Promise.race([updatePromise, timeoutPromise]) as any;
 
-      if (error) throw error;
+      if (error) {
+        console.error('PatientStore: Error en UPSERT:', error);
+        throw error;
+      }
 
       set((state) => ({
         patients: state.patients.map(p => p.id === id ? { ...p, ...updates } : p)
