@@ -170,10 +170,17 @@ export const usePatientStore = create<PatientState>()((set, get) => ({
 
       console.log('PatientStore: Payload final para Supabase:', dbPayload);
       
-      const { error } = await (supabase
+      // Implementamos un timeout de 15 segundos para la petición
+      const updatePromise = (supabase
         .from('patients') as any)
         .update(dbPayload)
         .eq('id', id);
+
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Tiempo de espera agotado (Timeout)')), 15000)
+      );
+
+      const { error } = await Promise.race([updatePromise, timeoutPromise]) as any;
 
       console.log('PatientStore: Respuesta de Supabase recibida. Error:', error);
       if (error) throw error;
