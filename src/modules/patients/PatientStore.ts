@@ -211,25 +211,38 @@ export const usePatientStore = create<PatientState>()((set, get) => ({
       // Lógica de REINTENTOS (3 intentos con espera incremental)
       let lastError: any = null;
       const maxRetries = 3;
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
       for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
           if (attempt > 1) {
-            console.log(`PatientStore: Reintentando guardado (Intento ${attempt}/${maxRetries})...`);
-            await new Promise(resolve => setTimeout(resolve, attempt * 2000)); // Esperar 2s, 4s...
+            console.log(`PatientStore: Reintentando vía FETCH DIRECTO (Intento ${attempt}/${maxRetries})...`);
+            await new Promise(resolve => setTimeout(resolve, attempt * 2000));
           }
 
-          const updatePromise = (supabase
-            .from('patients') as any)
-            .update(dbPayload, { count: 'none' })
-            .eq('id', id);
+          // BYPASS TOTAL: Usamos fetch directo a la API de Supabase (PostgREST)
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-          const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error(`Timeout en intento ${attempt}`)), 30000)
-          );
+          const response = await fetch(`${supabaseUrl}/rest/v1/patients?id=eq.${id}`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+              'apikey': supabaseKey,
+              'Authorization': `Bearer ${supabaseKey}`,
+              'Prefer': 'return=minimal'
+            },
+            body: JSON.stringify(dbPayload),
+            signal: controller.signal
+          });
 
-          const { error } = await Promise.race([updatePromise, timeoutPromise]) as any;
-          if (error) throw error;
+          clearTimeout(timeoutId);
+
+          if (!response.ok) {
+            const errorBody = await response.text();
+            throw new Error(`HTTP ${response.status}: ${errorBody}`);
+          }
 
           // Si llegamos aquí, el guardado fue exitoso
           return; 
@@ -241,9 +254,9 @@ export const usePatientStore = create<PatientState>()((set, get) => ({
 
       // Si fallaron todos los reintentos, hacemos ROLLBACK
       set({ patients: previousPatients });
-      throw lastError || new Error('No se pudo completar el guardado tras 3 reintentos');
+      throw lastError || new Error('No se pudo completar el guardado tras 3 reintentos vía API directa');
     } catch (err: any) {
-      toast.error(`Error persistente en la base de datos: ${err.message || err}`);
+      toast.error(`Error persistente en la API: ${err.message || err}`);
       throw err;
     }
   },
