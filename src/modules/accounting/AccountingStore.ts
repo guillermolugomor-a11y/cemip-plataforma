@@ -307,11 +307,11 @@ export const useAccountingStore = create<AccountingState>()((set, get) => ({
     const cajaTxs = transactions.filter(t => t.cajaId === activeCajaId && !t.cancelled);
     const totalIngresos = cajaTxs.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
     const totalEgresos = cajaTxs.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
-    
+
     // Solo lo que entró o salió en EFECTIVO afecta el fondo físico
     const ingresosEfectivo = cajaTxs.filter(t => t.type === 'income' && t.method === 'Efectivo').reduce((s, t) => s + t.amount, 0);
     const egresosEfectivo = cajaTxs.filter(t => t.type === 'expense' && t.method === 'Efectivo').reduce((s, t) => s + t.amount, 0);
-    
+
     const flujoNeto = totalIngresos - totalEgresos;
     const efectivoEsperado = caja.fondoInicial + ingresosEfectivo - egresosEfectivo;
     const diferencia = efectivoReal - efectivoEsperado;

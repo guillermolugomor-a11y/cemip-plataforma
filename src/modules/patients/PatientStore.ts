@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { supabase } from '../../lib/supabase';
 import type { Patient } from '../../types/clinical';
+import { toast } from 'sonner';
 
 interface PatientState {
   patients: Patient[];
@@ -134,6 +135,7 @@ export const usePatientStore = create<PatientState>()((set, get) => ({
       return newPatient;
     } catch (err: any) {
       console.error('Error adding patient:', err);
+      toast.error(`Error de base de datos: ${err.message || 'No se pudo registrar el paciente'}`);
       throw err;
     }
   },
@@ -176,6 +178,7 @@ export const usePatientStore = create<PatientState>()((set, get) => ({
       }));
     } catch (err: any) {
       console.error('Error updating patient:', err);
+      toast.error(`Error de base de datos: ${err.message || 'No se pudo actualizar el paciente'}`);
       throw err;
     }
   },
@@ -189,11 +192,13 @@ export const usePatientStore = create<PatientState>()((set, get) => ({
 
       if (error) throw error;
 
+      toast.success('Expediente eliminado correctamente');
       set((state) => ({
         patients: state.patients.filter(p => p.id !== id)
       }));
     } catch (err: any) {
       console.error('Error deleting patient:', err);
+      toast.error(`Error al eliminar: ${err.message || 'No se pudo eliminar el expediente'}`);
       throw err;
     }
   },

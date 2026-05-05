@@ -16,7 +16,7 @@ export interface Patient {
   initialNotes?: string;
   attendanceDays?: string[];
   appointmentTime?: string;
-  sessionCost?: string;
+  sessionCost?: number;
   requiresInvoice?: boolean;
   schoolName?: string;
   schoolPhone?: string;

@@ -196,8 +196,8 @@ export default function PatientList({
                           <button onClick={(e) => handleEdit(patient, e as any)} className="p-2 hover:bg-apple-blue/10 hover:text-apple-blue rounded-lg transition-all" title="Editar">
                             <Edit2 className="w-5 h-5" />
                           </button>
-                          <button className="p-2 hover:bg-apple-blue/10 hover:text-apple-blue rounded-lg transition-all" title="Mensaje">
-                            <MessageCircle className="w-5 h-5" />
+                          <button onClick={(e) => handleDelete(patient.id, patient.name, e as any)} className="p-2 hover:bg-apple-red/10 hover:text-apple-red rounded-lg transition-all" title="Eliminar">
+                            <Trash2 className="w-5 h-5" />
                           </button>
                         </div>
                       </td>

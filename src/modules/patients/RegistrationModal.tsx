@@ -10,6 +10,7 @@ import {
 import { cn } from '../../lib/utils';
 import type { Patient } from '../../types/clinical';
 import { calculateAge } from '../../lib/dateUtils';
+import { toast } from 'sonner';
 
 interface RegistrationModalProps {
   isOpen: boolean;
@@ -66,12 +67,10 @@ export default function RegistrationModal({ isOpen, onClose, onSave, patient, is
 
   React.useEffect(() => {
     if (patient && isOpen) {
-      // Split name if possible (simple heuristic)
-      const names = (patient.name || '').split(' ');
       setFormData({
-        name: names[0] || '',
-        lastNamePaterno: names[1] || '',
-        lastNameMaterno: names.slice(2).join(' ') || '',
+        name: patient.name || '',
+        lastNamePaterno: patient.lastNamePaterno || '',
+        lastNameMaterno: patient.lastNameMaterno || '',
         birthDate: patient.birthDate || '',
         gender: patient.gender || 'Masculino',
         curp: patient.curp || '',
@@ -151,23 +150,25 @@ export default function RegistrationModal({ isOpen, onClose, onSave, patient, is
     const savedData: Patient = {
       ...(patient || {}),
       ...formData,
-      name: `${formData.name} ${formData.lastNamePaterno}`.trim(),
+      name: formData.name.trim(),
       age: formData.birthDate 
         ? calculateAge(formData.birthDate)
         : (patient?.age || 0),
       tutor: formData.tutorName,
+      sessionCost: formData.sessionCost ? Number(formData.sessionCost) : 0,
       caseId: patient?.caseId || `EXP-${new Date().getFullYear()}-${Math.floor(Math.random() * 900) + 100}`,
     } as Patient;
 
     try {
       await onSave(savedData);
+      toast.success(patient ? 'Paciente actualizado' : 'Paciente registrado');
       setIsSaving(false);
       onClose();
       setStep(1);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving patient:', error);
+      toast.error(`Error al guardar: ${error.message || 'Error desconocido'}`);
       setIsSaving(false);
-      // Optional: Add error toast here
     }
   };
 
