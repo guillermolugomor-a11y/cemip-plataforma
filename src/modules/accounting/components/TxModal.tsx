@@ -21,7 +21,9 @@ interface TxModalProps {
 export const TxModal = ({ isOpen, onClose }: TxModalProps) => {
     const { addTransaction } = useAccountingStore();
     const specialists = useSpecialistStore(s => s.specialists);
-    const { appointments, markAppointmentsAsPaid } = useAgendaStore();
+    const { appointments, markAppointmentsAsSpecialistPaid, fetchAppointments } = useAgendaStore();
+    const patients = usePatientStore(s => s.patients);
+    const fetchPatients = usePatientStore(s => s.fetchPatients);
 
     const [form, setForm] = useState({
         type: 'income' as 'income' | 'expense',
@@ -37,14 +39,59 @@ export const TxModal = ({ isOpen, onClose }: TxModalProps) => {
     const [receiptFile, setReceiptFile] = useState<File | null>(null);
     const [receiptBase64, setReceiptBase64] = useState<string>('');
 
+    // Force refresh data on mount
+    useEffect(() => {
+        if (isOpen) {
+            fetchAppointments();
+            fetchPatients();
+        }
+    }, [isOpen, fetchAppointments, fetchPatients]);
+
     const today = getLocalDateString();
     const todayApts = appointments.filter(a => a.date === today);
 
-    const pendingApts = appointments.filter(
-        a => a.specialistId === selectedSpecialistId &&
-            a.status === 'confirmed' &&
-            !a.isPaid
-    );
+    // Resolve names for appointments
+    const resolvedAppointments = React.useMemo(() => {
+        return appointments.map(apt => {
+            const p = patients.find(pat => pat.id === apt.patientId);
+            const s = specialists.find(spec => spec.id === apt.specialistId);
+            return {
+                ...apt,
+                patientName: p?.name || apt.patientName || 'Paciente',
+                specialistName: s?.name || apt.specialistName || 'Especialista'
+            };
+        });
+    }, [appointments, patients, specialists]);
+
+    const pendingApts = resolvedAppointments.filter(a => {
+        const specialist = specialists.find(s => s.id === selectedSpecialistId);
+        if (!specialist) return false;
+        
+        const matchesId = a.specialistId && selectedSpecialistId && a.specialistId === selectedSpecialistId;
+        const matchesName = a.specialistName && specialist && a.specialistName.toLowerCase().trim() === specialist.name.toLowerCase().trim();
+        
+        const isCollectedFromPatient = a.isPaid || a.isAccountingLogged;
+        const isNotYetPaidToSpecialist = !a.isSpecialistPaid;
+        
+        return (matchesId || matchesName) && isCollectedFromPatient && isNotYetPaidToSpecialist;
+    });
+
+    // Debug info for UI
+    const debugInfo = React.useMemo(() => {
+        if (!selectedSpecialistId) return null;
+        const spec = specialists.find(s => s.id === selectedSpecialistId);
+        const allForSpec = resolvedAppointments.filter(a => 
+            a.specialistId === selectedSpecialistId || 
+            (spec && a.specialistName.toLowerCase().trim() === spec.name.toLowerCase().trim())
+        );
+        return {
+            name: spec?.name,
+            total: allForSpec.length,
+            collected: allForSpec.filter(a => a.isPaid || a.isAccountingLogged).length,
+            alreadyPaid: allForSpec.filter(a => a.isSpecialistPaid).length,
+            pending: allForSpec.filter(a => (a.isPaid || a.isAccountingLogged) && !a.isSpecialistPaid).length
+        };
+    }, [selectedSpecialistId, resolvedAppointments, specialists]);
 
     const isNomina = form.type === 'expense' && form.category === 'Nómina';
 
@@ -134,8 +181,8 @@ export const TxModal = ({ isOpen, onClose }: TxModalProps) => {
                 category: form.category || (form.type === 'income' ? 'Consulta' : 'Honorarios'),
                 receiptUrl: receiptBase64 || undefined
             });
-            if (isNomina && selectedAptIds.length > 0 && markAppointmentsAsPaid) {
-                await markAppointmentsAsPaid(selectedAptIds);
+            if (isNomina && selectedAptIds.length > 0 && markAppointmentsAsSpecialistPaid) {
+                await markAppointmentsAsSpecialistPaid(selectedAptIds);
             }
             onClose();
             resetForm();
@@ -290,12 +337,34 @@ export const TxModal = ({ isOpen, onClose }: TxModalProps) => {
                                         </div>
                                     )}
 
-                                    {selectedAptIds.length > 0 && (
-                                        <div className="flex items-center justify-between bg-apple-bg border border-orange-200 rounded-xl px-4 py-3">
-                                            <span className="text-[11px] font-bold text-apple-text">{selectedAptIds.length} sesión{selectedAptIds.length > 1 ? 'es' : ''} seleccionada{selectedAptIds.length > 1 ? 's' : ''}</span>
-                                            <span className="text-[14px] font-black text-orange-500 tabular-nums">
-                                                {fmt(parseFloat(form.amount) || 0)}
-                                            </span>
+                                        </div>
+                                    )}
+
+                                    {/* Auditoría Debug (Solo visible para admin) */}
+                                    {debugInfo && (
+                                        <div className="mt-4 p-4 bg-white/50 rounded-xl border border-orange-200 animate-apple shadow-sm">
+                                            <div className="flex items-center gap-2 mb-3">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse"></div>
+                                                <div className="text-[9px] font-black uppercase tracking-[0.15em] text-orange-600">Auditoría: {debugInfo.name}</div>
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-y-3 gap-x-4">
+                                                <div className="flex flex-col">
+                                                    <span className="text-[8px] font-bold text-apple-text-tertiary uppercase tracking-wider">Encontradas</span>
+                                                    <span className="text-[12px] font-black text-apple-black tabular-nums">{debugInfo.total}</span>
+                                                </div>
+                                                <div className="flex flex-col">
+                                                    <span className="text-[8px] font-bold text-apple-text-tertiary uppercase tracking-wider">Cobradas</span>
+                                                    <span className="text-[12px] font-black text-emerald-600 tabular-nums">{debugInfo.collected}</span>
+                                                </div>
+                                                <div className="flex flex-col">
+                                                    <span className="text-[8px] font-bold text-apple-text-tertiary uppercase tracking-wider">Ya Pagadas</span>
+                                                    <span className="text-[12px] font-black text-apple-blue tabular-nums">{debugInfo.alreadyPaid}</span>
+                                                </div>
+                                                <div className="flex flex-col">
+                                                    <span className="text-[8px] font-bold text-apple-text-tertiary uppercase tracking-wider">Para Nómina</span>
+                                                    <span className="text-[12px] font-black text-apple-red tabular-nums">{debugInfo.pending}</span>
+                                                </div>
+                                            </div>
                                         </div>
                                     )}
                                 </div>
