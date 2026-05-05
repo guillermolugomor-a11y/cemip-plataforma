@@ -84,7 +84,7 @@ export default function RegistrationModal({ isOpen, onClose, onSave, patient, is
         firstAppointmentTime: patient.firstAppointmentTime || '',
         attendanceDays: patient.attendanceDays || [],
         appointmentTime: patient.appointmentTime || '',
-        sessionCost: patient.sessionCost || '',
+        sessionCost: patient.sessionCost?.toString() || '',
         requiresInvoice: patient.requiresInvoice || false,
         schoolName: patient.schoolName || '',
         schoolPhone: patient.schoolPhone || '',
