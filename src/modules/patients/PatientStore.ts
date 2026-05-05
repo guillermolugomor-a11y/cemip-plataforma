@@ -141,7 +141,6 @@ export const usePatientStore = create<PatientState>()((set, get) => ({
   },
 
   updatePatient: async (id, updates) => {
-    console.log('PatientStore: Iniciando actualización para ID:', id);
     const existingPatient = get().patients.find(p => p.id === id);
     
     try {
@@ -152,16 +151,10 @@ export const usePatientStore = create<PatientState>()((set, get) => ({
         const old = oldValue === undefined ? null : oldValue;
 
         if (typeof val === 'string') {
-          // Limpieza ultra-agresiva para evitar caracteres invisibles de Excel/Sheets
           let cleaned = val.trim();
           
           if (isPhone) {
-            // Para teléfonos, eliminamos TODO lo que no sea número o +
             cleaned = cleaned.replace(/[^\d+]/g, '');
-            console.log(`PatientStore: Teléfono limpio: "${cleaned}" (Original: "${val}")`);
-            // Log de códigos de caracteres para detectar "fantasmas"
-            const hexCodes = Array.from(val).map(c => c.charCodeAt(0).toString(16)).join(' ');
-            console.log(`PatientStore: Códigos hex del string original: ${hexCodes}`);
           } else {
             cleaned = cleaned.replace(/[\u0000-\u001F\u007F-\u009F\u200B-\u200D\uFEFF]/g, '');
           }
@@ -170,7 +163,6 @@ export const usePatientStore = create<PatientState>()((set, get) => ({
           return finalVal !== old ? finalVal : undefined;
         }
 
-        // Para otros tipos (números, arrays, booleans)
         if (Array.isArray(val)) {
           return JSON.stringify(val) !== JSON.stringify(old) ? val : undefined;
         }
@@ -208,15 +200,8 @@ export const usePatientStore = create<PatientState>()((set, get) => ({
       addField('school_grade', updates.schoolGrade, existingPatient?.schoolGrade);
       addField('school_group', updates.schoolGroup, existingPatient?.schoolGroup);
 
-      if (Object.keys(dbPayload).length === 0) {
-        console.log('PatientStore: No se detectaron cambios reales.');
-        return;
-      }
+      if (Object.keys(dbPayload).length === 0) return;
 
-      console.log('PatientStore: Enviando actualización mediante UPSERT (Bypass):', dbPayload);
-      
-      // Para UPSERT necesitamos incluir los campos obligatorios (NOT NULL) 
-      // aunque no hayan cambiado, para evitar errores de restricción.
       const upsertData = {
         id,
         case_id: updates.caseId || existingPatient?.caseId,
@@ -236,17 +221,13 @@ export const usePatientStore = create<PatientState>()((set, get) => ({
 
       const { error } = await Promise.race([updatePromise, timeoutPromise]) as any;
 
-      if (error) {
-        console.error('PatientStore: Error en UPSERT:', error);
-        throw error;
-      }
+      if (error) throw error;
 
       set((state) => ({
         patients: state.patients.map(p => p.id === id ? { ...p, ...updates } : p)
       }));
     } catch (err: any) {
-      console.error('Error updating patient:', err);
-      toast.error(`Error de base de datos: ${err.message || 'No se pudo actualizar el paciente'}`);
+      toast.error(`Error de base de datos: ${err.message || err}`);
       throw err;
     }
   },
