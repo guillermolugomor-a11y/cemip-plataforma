@@ -61,8 +61,25 @@ export default function ExpenseModal({ isOpen, onClose }: ExpenseModalProps) {
     const matchesSpecialist = a.specialistId === selectedSpecialistId || 
                              (a.specialistName.toLowerCase() === specialist.name.toLowerCase());
     
-    return matchesSpecialist && a.isPaid && !a.isSpecialistPaid;
+    const isCollectedFromPatient = a.isPaid || a.isAccountingLogged;
+    return matchesSpecialist && isCollectedFromPatient && !a.isSpecialistPaid;
   });
+
+  // Debug log to console to see what's happening
+  React.useEffect(() => {
+    if (selectedSpecialistId) {
+      const specialist = specialists.find(s => s.id === selectedSpecialistId);
+      const totalForSpec = resolvedAppointments.filter(a => 
+        a.specialistId === selectedSpecialistId || 
+        (specialist && a.specialistName.toLowerCase() === specialist.name.toLowerCase())
+      );
+      console.log(`[ExpenseModal Debug] Specialist: ${specialist?.name}`);
+      console.log(`- Total appointments found: ${totalForSpec.length}`);
+      console.log(`- Collected from patient: ${totalForSpec.filter(a => a.isPaid || a.isAccountingLogged).length}`);
+      console.log(`- Already paid to specialist: ${totalForSpec.filter(a => a.isSpecialistPaid).length}`);
+      console.log(`- Final pending: ${pendingAppointments.length}`);
+    }
+  }, [selectedSpecialistId, pendingAppointments, resolvedAppointments, specialists]);
 
   // Auto-calculate amount when Nominas are selected
   useEffect(() => {
