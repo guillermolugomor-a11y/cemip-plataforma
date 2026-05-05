@@ -147,9 +147,19 @@ export const usePatientStore = create<PatientState>()((set, get) => ({
     try {
       const dbPayload: any = {};
       
-      const addIfChanged = (dbKey: string, newValue: any, oldValue: any) => {
-        if (newValue !== undefined && newValue !== oldValue) {
-          dbPayload[dbKey] = newValue;
+      const sanitize = (val: any, isPhone = false) => {
+        if (typeof val !== 'string') return val;
+        let cleaned = val.trim().replace(/[\u200B-\u200D\uFEFF]/g, ''); // Eliminar caracteres invisibles
+        if (isPhone) {
+          cleaned = cleaned.replace(/[^\d+ ]/g, ''); // Para teléfonos, solo números, + y espacios
+        }
+        return cleaned;
+      };
+
+      const addIfChanged = (dbKey: string, newValue: any, oldValue: any, isPhone = false) => {
+        const sanitizedValue = sanitize(newValue, isPhone);
+        if (sanitizedValue !== undefined && sanitizedValue !== oldValue) {
+          dbPayload[dbKey] = sanitizedValue;
         }
       };
 
@@ -162,7 +172,7 @@ export const usePatientStore = create<PatientState>()((set, get) => ({
       addIfChanged('birth_date', updates.birthDate, existingPatient?.birthDate);
       addIfChanged('tutor', updates.tutor, existingPatient?.tutor);
       addIfChanged('relationship', updates.relationship, existingPatient?.relationship);
-      addIfChanged('phone', updates.phone, existingPatient?.phone);
+      addIfChanged('phone', updates.phone, existingPatient?.phone, true);
       addIfChanged('email', updates.email, existingPatient?.email);
       addIfChanged('consult_reason', updates.consultReason, existingPatient?.consultReason);
       addIfChanged('initial_notes', updates.initialNotes, existingPatient?.initialNotes);
@@ -171,7 +181,7 @@ export const usePatientStore = create<PatientState>()((set, get) => ({
       addIfChanged('session_cost', updates.sessionCost, existingPatient?.sessionCost);
       addIfChanged('requires_invoice', updates.requiresInvoice, existingPatient?.requiresInvoice);
       addIfChanged('school_name', updates.schoolName, existingPatient?.schoolName);
-      addIfChanged('school_phone', updates.schoolPhone, existingPatient?.schoolPhone);
+      addIfChanged('school_phone', updates.schoolPhone, existingPatient?.schoolPhone, true);
       addIfChanged('school_email', updates.schoolEmail, existingPatient?.schoolEmail);
       addIfChanged('school_grade', updates.schoolGrade, existingPatient?.schoolGrade);
       addIfChanged('school_group', updates.schoolGroup, existingPatient?.schoolGroup);
