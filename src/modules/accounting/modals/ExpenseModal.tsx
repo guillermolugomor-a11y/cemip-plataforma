@@ -19,9 +19,10 @@ const categories = [
 
 export default function ExpenseModal({ isOpen, onClose }: ExpenseModalProps) {
   const { addTransaction, activeCajaId } = useAccountingStore();
-  const isLocked = !activeCajaId;
   const specialists = useSpecialistStore(s => s.specialists);
   const appointments = useAgendaStore(s => s.appointments);
+  const fetchAppointments = useAgendaStore(s => s.fetchAppointments);
+  const fetchPatients = usePatientStore(s => s.fetchPatients);
   const markAppointmentsAsSpecialistPaid = useAgendaStore(s => s.markAppointmentsAsSpecialistPaid);
   const patients = usePatientStore(s => s.patients);
 
@@ -39,6 +40,16 @@ export default function ExpenseModal({ isOpen, onClose }: ExpenseModalProps) {
   
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [receiptBase64, setReceiptBase64] = useState<string>('');
+
+  const isLocked = !activeCajaId;
+
+  // Force refresh data on mount
+  React.useEffect(() => {
+    if (isOpen) {
+      fetchAppointments();
+      fetchPatients();
+    }
+  }, [isOpen, fetchAppointments, fetchPatients]);
   
   // Resolve names for appointments
   const resolvedAppointments = React.useMemo(() => {
@@ -58,11 +69,12 @@ export default function ExpenseModal({ isOpen, onClose }: ExpenseModalProps) {
     const specialist = specialists.find(s => s.id === selectedSpecialistId);
     if (!specialist) return false;
     
-    const matchesSpecialist = a.specialistId === selectedSpecialistId || 
-                             (a.specialistName.toLowerCase() === specialist.name.toLowerCase());
+    // Búsqueda ultra-flexible: por ID o por Nombre (ignorando mayúsculas/minúsculas)
+    const matchesId = a.specialistId === selectedSpecialistId;
+    const matchesName = a.specialistName.toLowerCase().trim() === specialist.name.toLowerCase().trim();
     
     const isCollectedFromPatient = a.isPaid || a.isAccountingLogged;
-    return matchesSpecialist && isCollectedFromPatient && !a.isSpecialistPaid;
+    return (matchesId || matchesName) && isCollectedFromPatient && !a.isSpecialistPaid;
   });
 
   // Debug log to console to see what's happening
