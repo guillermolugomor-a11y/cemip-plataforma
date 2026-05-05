@@ -23,6 +23,7 @@ export default function ExpenseModal({ isOpen, onClose }: ExpenseModalProps) {
   const specialists = useSpecialistStore(s => s.specialists);
   const appointments = useAgendaStore(s => s.appointments);
   const markAppointmentsAsSpecialistPaid = useAgendaStore(s => s.markAppointmentsAsSpecialistPaid);
+  const patients = usePatientStore(s => s.patients);
 
   const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState({
@@ -38,12 +39,27 @@ export default function ExpenseModal({ isOpen, onClose }: ExpenseModalProps) {
   
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [receiptBase64, setReceiptBase64] = useState<string>('');
-
+  
+  // Resolve names for appointments
+  const resolvedAppointments = React.useMemo(() => {
+    return appointments.map(apt => {
+      const p = patients.find(pat => pat.id === apt.patientId);
+      const s = specialists.find(spec => spec.id === apt.specialistId);
+      return {
+        ...apt,
+        patientName: p?.name || apt.patientName || 'Paciente',
+        specialistName: s?.name || apt.specialistName || 'Especialista'
+      };
+    });
+  }, [appointments, patients, specialists]);
+  
   // Derived therapies to pay
-  const pendingAppointments = appointments.filter(a => {
+  const pendingAppointments = resolvedAppointments.filter(a => {
     const specialist = specialists.find(s => s.id === selectedSpecialistId);
+    if (!specialist) return false;
+    
     const matchesSpecialist = a.specialistId === selectedSpecialistId || 
-                             (specialist && a.specialistName?.toLowerCase() === specialist.name.toLowerCase());
+                             (a.specialistName.toLowerCase() === specialist.name.toLowerCase());
     
     return matchesSpecialist && a.isPaid && !a.isSpecialistPaid;
   });
