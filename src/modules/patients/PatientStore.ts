@@ -202,21 +202,13 @@ export const usePatientStore = create<PatientState>()((set, get) => ({
 
       if (Object.keys(dbPayload).length === 0) return;
 
-      const upsertData = {
-        id,
-        case_id: updates.caseId || existingPatient?.caseId,
-        name: updates.name || existingPatient?.name,
-        last_name_paterno: updates.lastNamePaterno || existingPatient?.lastNamePaterno,
-        gender: updates.gender || existingPatient?.gender,
-        ...dbPayload
-      };
-
       const updatePromise = (supabase
         .from('patients') as any)
-        .upsert(upsertData, { onConflict: 'id', count: 'none' });
+        .update(dbPayload)
+        .eq('id', id);
 
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Tiempo de espera agotado (Timeout)')), 15000)
+        setTimeout(() => reject(new Error('Tiempo de espera agotado (30 segundos)')), 30000)
       );
 
       const { error } = await Promise.race([updatePromise, timeoutPromise]) as any;
