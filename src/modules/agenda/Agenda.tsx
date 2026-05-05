@@ -409,13 +409,13 @@ export default function Agenda({ patients }: { patients: any[] }) {
         addTransaction({
           type: 'income',
           amount: parseFloat(payForm.amount),
-          concept: `${paymentConfirm.type || 'Consulta'} – ${paymentConfirm.patientName}`,
+          concept: `${paymentConfirm.type || 'Sesión'} – ${paymentConfirm.patientName} (${paymentConfirm.specialistName})`,
           category: 'Consulta',
           date: getLocalDateString(),
           method: payForm.method as any,
           patientName: paymentConfirm.patientName,
           specialistName: paymentConfirm.specialistName,
-          nota: `Pago registrado desde Agenda`,
+          nota: `Cobro desde Agenda: ${paymentConfirm.specialistName}`,
         });
         updateAppointment(paymentConfirm.id, { isAccountingLogged: true, isPaid: true });
       }
