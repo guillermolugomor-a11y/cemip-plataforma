@@ -142,31 +142,44 @@ export const usePatientStore = create<PatientState>()((set, get) => ({
 
   updatePatient: async (id, updates) => {
     console.log('PatientStore: Iniciando actualización para ID:', id);
-    console.log('PatientStore: Datos de actualización recibidos:', updates);
+    const existingPatient = get().patients.find(p => p.id === id);
+    
     try {
       const dbPayload: any = {};
-      if (updates.caseId !== undefined) dbPayload.case_id = updates.caseId;
-      if (updates.name !== undefined) dbPayload.name = updates.name;
-      if (updates.lastNamePaterno !== undefined) dbPayload.last_name_paterno = updates.lastNamePaterno;
-      if (updates.lastNameMaterno !== undefined) dbPayload.last_name_materno = updates.lastNameMaterno;
-      if (updates.age !== undefined) dbPayload.age = updates.age;
-      if (updates.gender !== undefined) dbPayload.gender = updates.gender;
-      if (updates.birthDate !== undefined) dbPayload.birth_date = updates.birthDate;
-      if (updates.tutor !== undefined) dbPayload.tutor = updates.tutor;
-      if (updates.relationship !== undefined) dbPayload.relationship = updates.relationship;
-      if (updates.phone !== undefined) dbPayload.phone = updates.phone;
-      if (updates.email !== undefined) dbPayload.email = updates.email;
-      if (updates.consultReason !== undefined) dbPayload.consult_reason = updates.consultReason;
-      if (updates.initialNotes !== undefined) dbPayload.initial_notes = updates.initialNotes;
-      if (updates.attendanceDays !== undefined) dbPayload.attendance_days = updates.attendanceDays;
-      if (updates.appointmentTime !== undefined) dbPayload.appointment_time = updates.appointmentTime;
-      if (updates.sessionCost !== undefined) dbPayload.session_cost = updates.sessionCost;
-      if (updates.requiresInvoice !== undefined) dbPayload.requires_invoice = updates.requiresInvoice;
-      if (updates.schoolName !== undefined) dbPayload.school_name = updates.schoolName;
-      if (updates.schoolPhone !== undefined) dbPayload.school_phone = updates.schoolPhone;
-      if (updates.schoolEmail !== undefined) dbPayload.school_email = updates.schoolEmail;
-      if (updates.schoolGrade !== undefined) dbPayload.school_grade = updates.schoolGrade;
-      if (updates.schoolGroup !== undefined) dbPayload.school_group = updates.schoolGroup;
+      
+      const addIfChanged = (dbKey: string, newValue: any, oldValue: any) => {
+        if (newValue !== undefined && newValue !== oldValue) {
+          dbPayload[dbKey] = newValue;
+        }
+      };
+
+      addIfChanged('case_id', updates.caseId, existingPatient?.caseId);
+      addIfChanged('name', updates.name, existingPatient?.name);
+      addIfChanged('last_name_paterno', updates.lastNamePaterno, existingPatient?.lastNamePaterno);
+      addIfChanged('last_name_materno', updates.lastNameMaterno, existingPatient?.lastNameMaterno);
+      addIfChanged('age', updates.age, existingPatient?.age);
+      addIfChanged('gender', updates.gender, existingPatient?.gender);
+      addIfChanged('birth_date', updates.birthDate, existingPatient?.birthDate);
+      addIfChanged('tutor', updates.tutor, existingPatient?.tutor);
+      addIfChanged('relationship', updates.relationship, existingPatient?.relationship);
+      addIfChanged('phone', updates.phone, existingPatient?.phone);
+      addIfChanged('email', updates.email, existingPatient?.email);
+      addIfChanged('consult_reason', updates.consultReason, existingPatient?.consultReason);
+      addIfChanged('initial_notes', updates.initialNotes, existingPatient?.initialNotes);
+      addIfChanged('attendance_days', updates.attendanceDays, existingPatient?.attendanceDays);
+      addIfChanged('appointment_time', updates.appointmentTime, existingPatient?.appointmentTime);
+      addIfChanged('session_cost', updates.sessionCost, existingPatient?.sessionCost);
+      addIfChanged('requires_invoice', updates.requiresInvoice, existingPatient?.requiresInvoice);
+      addIfChanged('school_name', updates.schoolName, existingPatient?.schoolName);
+      addIfChanged('school_phone', updates.schoolPhone, existingPatient?.schoolPhone);
+      addIfChanged('school_email', updates.schoolEmail, existingPatient?.schoolEmail);
+      addIfChanged('school_grade', updates.schoolGrade, existingPatient?.schoolGrade);
+      addIfChanged('school_group', updates.schoolGroup, existingPatient?.schoolGroup);
+
+      if (Object.keys(dbPayload).length === 0) {
+        console.log('PatientStore: No se detectaron cambios reales. Omitiendo actualización en Supabase.');
+        return;
+      }
 
       console.log('PatientStore: Payload final para Supabase:', dbPayload);
       
