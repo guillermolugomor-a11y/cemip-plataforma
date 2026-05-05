@@ -19,6 +19,7 @@ interface AgendaState {
   deleteAppointment: (id: string) => Promise<void>;
   updateAppointment: (id: string, apt: Partial<Appointment>) => Promise<void>;
   markAppointmentsAsPaid: (ids: string[]) => Promise<void>;
+  markAppointmentsAsSpecialistPaid: (ids: string[]) => Promise<void>;
 }
 
 export const useAgendaStore = create<AgendaState>()((set, get) => ({
@@ -54,6 +55,7 @@ export const useAgendaStore = create<AgendaState>()((set, get) => ({
         type: d.type || '',
         status: (d.status as Appointment['status']) || 'pending',
         isPaid: d.is_paid || false,
+        isSpecialistPaid: d.is_specialist_paid || false,
         sessionCost: d.session_cost || 0,
         isAccountingLogged: d.is_accounting_logged || false,
       }));
@@ -216,6 +218,7 @@ export const useAgendaStore = create<AgendaState>()((set, get) => ({
     if (apt.type !== undefined) dbPayload.type = apt.type;
     if (apt.status !== undefined) dbPayload.status = apt.status;
     if (apt.isPaid !== undefined) dbPayload.is_paid = apt.isPaid;
+    if (apt.isSpecialistPaid !== undefined) dbPayload.is_specialist_paid = apt.isSpecialistPaid;
     if (apt.sessionCost !== undefined) dbPayload.session_cost = apt.sessionCost;
     if (apt.isAccountingLogged !== undefined) dbPayload.is_accounting_logged = apt.isAccountingLogged;
 
@@ -269,6 +272,26 @@ export const useAgendaStore = create<AgendaState>()((set, get) => ({
       }));
     } catch (err: any) {
       console.error('Error marking as paid:', err);
+      throw err;
+    }
+  },
+
+  markAppointmentsAsSpecialistPaid: async (ids) => {
+    try {
+      const { error } = await (supabase
+        .from('appointments') as any)
+        .update({ is_specialist_paid: true })
+        .in('id', ids);
+
+      if (error) throw error;
+
+      set((state) => ({
+        appointments: state.appointments.map(a =>
+          ids.includes(a.id) ? { ...a, isSpecialistPaid: true } : a
+        )
+      }));
+    } catch (err: any) {
+      console.error('Error marking as specialist paid:', err);
       throw err;
     }
   },

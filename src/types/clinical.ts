@@ -39,6 +39,7 @@ export interface Appointment {
   type: string;
   status: 'confirmed' | 'pending' | 'cancelled' | 'completed' | 'absent';
   isPaid?: boolean;
+  isSpecialistPaid?: boolean;
   sessionCost?: number;
   isAccountingLogged?: boolean;
 }

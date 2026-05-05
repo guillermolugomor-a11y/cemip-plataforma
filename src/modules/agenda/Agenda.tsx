@@ -130,7 +130,22 @@ const AppointmentCard = ({ appointment, onStatusChange, onDelete, onEdit, menuAl
       <div className="space-y-0.5 mb-3">
         <div className="text-[8px] font-black tracking-[0.05em] text-apple-blue uppercase opacity-70 leading-none truncate">{appointment.type}</div>
         <div className="font-bold text-apple-black text-[13px] leading-tight transition-colors group-hover:text-apple-blue truncate">{appointment.patientName}</div>
-        <div className="text-[10px] font-medium text-apple-text-tertiary flex items-center gap-1.5 italic truncate">
+        
+        {/* Estatus de Pago (solo para confirmadas/completadas) */}
+        {(appointment.status === 'confirmed' || appointment.status === 'completed') && (
+          <div className="flex items-center gap-1.5 mt-1">
+            <div className={cn(
+              "text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md",
+              appointment.isPaid 
+                ? "bg-apple-green/10 text-apple-green border border-apple-green/20" 
+                : "bg-apple-red/10 text-apple-red border border-apple-red/20"
+            )}>
+              {appointment.isPaid ? 'PAGADO' : 'FALTA COBRAR'}
+            </div>
+          </div>
+        )}
+
+        <div className="text-[10px] font-medium text-apple-text-tertiary flex items-center gap-1.5 italic truncate mt-1">
           <User className="w-2.5 h-2.5 opacity-50" /> {appointment.specialistName}
         </div>
       </div>

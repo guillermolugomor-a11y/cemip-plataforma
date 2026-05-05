@@ -22,7 +22,7 @@ export default function ExpenseModal({ isOpen, onClose }: ExpenseModalProps) {
   const isLocked = !activeCajaId;
   const specialists = useSpecialistStore(s => s.specialists);
   const appointments = useAgendaStore(s => s.appointments);
-  const markAppointmentsAsPaid = useAgendaStore(s => s.markAppointmentsAsPaid);
+  const markAppointmentsAsSpecialistPaid = useAgendaStore(s => s.markAppointmentsAsSpecialistPaid);
 
   const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState({
@@ -41,7 +41,7 @@ export default function ExpenseModal({ isOpen, onClose }: ExpenseModalProps) {
 
   // Derived therapies to pay
   const pendingAppointments = appointments.filter(
-    a => a.specialistId === selectedSpecialistId && !a.isPaid
+    a => a.specialistId === selectedSpecialistId && a.isPaid && !a.isSpecialistPaid
   );
 
   // Auto-calculate amount when Nominas are selected
@@ -125,7 +125,7 @@ export default function ExpenseModal({ isOpen, onClose }: ExpenseModalProps) {
 
       // 2. Mark therapies as paid
       if (formData.category === 'Nómina' && selectedAppointmentIds.length > 0) {
-        markAppointmentsAsPaid(selectedAppointmentIds);
+        markAppointmentsAsSpecialistPaid(selectedAppointmentIds);
       }
 
       setIsSaving(false);
