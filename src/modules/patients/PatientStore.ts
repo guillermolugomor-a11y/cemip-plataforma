@@ -147,57 +147,70 @@ export const usePatientStore = create<PatientState>()((set, get) => ({
     try {
       const dbPayload: any = {};
       
-      const sanitize = (val: any, isPhone = false) => {
-        if (typeof val !== 'string') return val;
-        let cleaned = val.trim().replace(/[\u200B-\u200D\uFEFF]/g, ''); // Eliminar caracteres invisibles
-        if (isPhone) {
-          cleaned = cleaned.replace(/[^\d+ ]/g, ''); // Para teléfonos, solo números, + y espacios
+      const sanitizeAndCompare = (newValue: any, oldValue: any, isPhone = false) => {
+        // Convertir undefined a null para comparación consistente
+        const val = newValue === undefined ? null : newValue;
+        const old = oldValue === undefined ? null : oldValue;
+
+        // Si es string, limpiar
+        if (typeof val === 'string') {
+          let cleaned = val.trim().replace(/[\u200B-\u200D\uFEFF]/g, '');
+          if (isPhone) cleaned = cleaned.replace(/[^\d+ ]/g, '');
+          // Si queda vacío, tratar como null
+          const finalVal = cleaned === '' ? null : cleaned;
+          return finalVal !== old ? finalVal : undefined;
         }
-        return cleaned;
+
+        // Para otros tipos (números, arrays, booleans)
+        if (Array.isArray(val)) {
+          return JSON.stringify(val) !== JSON.stringify(old) ? val : undefined;
+        }
+
+        return val !== old ? val : undefined;
       };
 
-      const addIfChanged = (dbKey: string, newValue: any, oldValue: any, isPhone = false) => {
-        const sanitizedValue = sanitize(newValue, isPhone);
-        if (sanitizedValue !== undefined && sanitizedValue !== oldValue) {
-          dbPayload[dbKey] = sanitizedValue;
+      const addField = (dbKey: string, newValue: any, oldValue: any, isPhone = false) => {
+        const finalValue = sanitizeAndCompare(newValue, oldValue, isPhone);
+        if (finalValue !== undefined) {
+          dbPayload[dbKey] = finalValue;
         }
       };
 
-      addIfChanged('case_id', updates.caseId, existingPatient?.caseId);
-      addIfChanged('name', updates.name, existingPatient?.name);
-      addIfChanged('last_name_paterno', updates.lastNamePaterno, existingPatient?.lastNamePaterno);
-      addIfChanged('last_name_materno', updates.lastNameMaterno, existingPatient?.lastNameMaterno);
-      addIfChanged('age', updates.age, existingPatient?.age);
-      addIfChanged('gender', updates.gender, existingPatient?.gender);
-      addIfChanged('birth_date', updates.birthDate, existingPatient?.birthDate);
-      addIfChanged('tutor', updates.tutor, existingPatient?.tutor);
-      addIfChanged('relationship', updates.relationship, existingPatient?.relationship);
-      addIfChanged('phone', updates.phone, existingPatient?.phone, true);
-      addIfChanged('email', updates.email, existingPatient?.email);
-      addIfChanged('consult_reason', updates.consultReason, existingPatient?.consultReason);
-      addIfChanged('initial_notes', updates.initialNotes, existingPatient?.initialNotes);
-      addIfChanged('attendance_days', updates.attendanceDays, existingPatient?.attendanceDays);
-      addIfChanged('appointment_time', updates.appointmentTime, existingPatient?.appointmentTime);
-      addIfChanged('session_cost', updates.sessionCost, existingPatient?.sessionCost);
-      addIfChanged('requires_invoice', updates.requiresInvoice, existingPatient?.requiresInvoice);
-      addIfChanged('school_name', updates.schoolName, existingPatient?.schoolName);
-      addIfChanged('school_phone', updates.schoolPhone, existingPatient?.schoolPhone, true);
-      addIfChanged('school_email', updates.schoolEmail, existingPatient?.schoolEmail);
-      addIfChanged('school_grade', updates.schoolGrade, existingPatient?.schoolGrade);
-      addIfChanged('school_group', updates.schoolGroup, existingPatient?.schoolGroup);
+      addField('case_id', updates.caseId, existingPatient?.caseId);
+      addField('name', updates.name, existingPatient?.name);
+      addField('last_name_paterno', updates.lastNamePaterno, existingPatient?.lastNamePaterno);
+      addField('last_name_materno', updates.lastNameMaterno, existingPatient?.lastNameMaterno);
+      addField('age', updates.age, existingPatient?.age);
+      addField('gender', updates.gender, existingPatient?.gender);
+      addField('birth_date', updates.birthDate, existingPatient?.birthDate);
+      addField('tutor', updates.tutor, existingPatient?.tutor);
+      addField('relationship', updates.relationship, existingPatient?.relationship);
+      addField('phone', updates.phone, existingPatient?.phone, true);
+      addField('email', updates.email, existingPatient?.email);
+      addField('consult_reason', updates.consultReason, existingPatient?.consultReason);
+      addField('initial_notes', updates.initialNotes, existingPatient?.initialNotes);
+      addField('attendance_days', updates.attendanceDays, existingPatient?.attendanceDays);
+      addField('appointment_time', updates.appointmentTime, existingPatient?.appointmentTime);
+      addField('session_cost', updates.sessionCost, existingPatient?.sessionCost);
+      addField('requires_invoice', updates.requiresInvoice, existingPatient?.requiresInvoice);
+      addField('school_name', updates.schoolName, existingPatient?.schoolName);
+      addField('school_phone', updates.schoolPhone, existingPatient?.schoolPhone, true);
+      addField('school_email', updates.schoolEmail, existingPatient?.schoolEmail);
+      addField('school_grade', updates.schoolGrade, existingPatient?.schoolGrade);
+      addField('school_group', updates.schoolGroup, existingPatient?.schoolGroup);
 
       if (Object.keys(dbPayload).length === 0) {
-        console.log('PatientStore: No se detectaron cambios reales. Omitiendo actualización en Supabase.');
+        console.log('PatientStore: No se detectaron cambios reales.');
         return;
       }
 
-      console.log('PatientStore: Payload final para Supabase:', dbPayload);
+      console.log('PatientStore: Enviando actualización optimizada:', dbPayload);
       
-      // Implementamos un timeout de 15 segundos para la petición
       const updatePromise = (supabase
         .from('patients') as any)
         .update(dbPayload)
-        .eq('id', id);
+        .eq('id', id)
+        .select('id'); // Solo pedimos el ID de vuelta para mayor velocidad
 
       const timeoutPromise = new Promise((_, reject) => 
         setTimeout(() => reject(new Error('Tiempo de espera agotado (Timeout)')), 15000)
@@ -205,7 +218,6 @@ export const usePatientStore = create<PatientState>()((set, get) => ({
 
       const { error } = await Promise.race([updatePromise, timeoutPromise]) as any;
 
-      console.log('PatientStore: Respuesta de Supabase recibida. Error:', error);
       if (error) throw error;
 
       set((state) => ({
