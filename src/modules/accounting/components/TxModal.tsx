@@ -8,6 +8,7 @@ import { getLocalDateString } from '../../../lib/dateUtils';
 import { useAccountingStore } from '../AccountingStore';
 import { useSpecialistStore } from '../../specialists/SpecialistStore';
 import { useAgendaStore } from '../../agenda/AgendaStore';
+import { usePatientStore } from '../../patients/PatientStore';
 import { fmt } from './AccountingUI';
 
 const CATEGORIES_INCOME = ['Consulta', 'Evaluación', 'Terapia', 'Asesoría', 'Otro'];
@@ -337,6 +338,12 @@ export const TxModal = ({ isOpen, onClose }: TxModalProps) => {
                                         </div>
                                     )}
 
+                                    {selectedAptIds.length > 0 && (
+                                        <div className="flex items-center justify-between bg-apple-bg border border-orange-200 rounded-xl px-4 py-3">
+                                            <span className="text-[11px] font-bold text-apple-text">{selectedAptIds.length} sesión{selectedAptIds.length > 1 ? 'es' : ''} seleccionada{selectedAptIds.length > 1 ? 's' : ''}</span>
+                                            <span className="text-[14px] font-black text-orange-500 tabular-nums">
+                                                {fmt(parseFloat(form.amount) || 0)}
+                                            </span>
                                         </div>
                                     )}
 
