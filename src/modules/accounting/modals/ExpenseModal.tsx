@@ -69,13 +69,31 @@ export default function ExpenseModal({ isOpen, onClose }: ExpenseModalProps) {
     const specialist = specialists.find(s => s.id === selectedSpecialistId);
     if (!specialist) return false;
     
-    // Búsqueda ultra-flexible: por ID o por Nombre (ignorando mayúsculas/minúsculas)
-    const matchesId = a.specialistId === selectedSpecialistId;
-    const matchesName = a.specialistName.toLowerCase().trim() === specialist.name.toLowerCase().trim();
+    const matchesId = a.specialistId && selectedSpecialistId && a.specialistId === selectedSpecialistId;
+    const matchesName = a.specialistName && specialist && a.specialistName.toLowerCase().trim() === specialist.name.toLowerCase().trim();
     
     const isCollectedFromPatient = a.isPaid || a.isAccountingLogged;
-    return (matchesId || matchesName) && isCollectedFromPatient && !a.isSpecialistPaid;
+    const isNotYetPaidToSpecialist = !a.isSpecialistPaid;
+    
+    return (matchesId || matchesName) && isCollectedFromPatient && isNotYetPaidToSpecialist;
   });
+
+  // Debug info for UI
+  const debugInfo = React.useMemo(() => {
+    if (!selectedSpecialistId) return null;
+    const spec = specialists.find(s => s.id === selectedSpecialistId);
+    const allForSpec = resolvedAppointments.filter(a => 
+      a.specialistId === selectedSpecialistId || 
+      (spec && a.specialistName.toLowerCase().trim() === spec.name.toLowerCase().trim())
+    );
+    return {
+      name: spec?.name,
+      total: allForSpec.length,
+      collected: allForSpec.filter(a => a.isPaid || a.isAccountingLogged).length,
+      alreadyPaid: allForSpec.filter(a => a.isSpecialistPaid).length,
+      pending: allForSpec.filter(a => (a.isPaid || a.isAccountingLogged) && !a.isSpecialistPaid).length
+    };
+  }, [selectedSpecialistId, resolvedAppointments, specialists]);
 
   // Debug log to console to see what's happening
   React.useEffect(() => {
@@ -309,6 +327,34 @@ export default function ExpenseModal({ isOpen, onClose }: ExpenseModalProps) {
                               </label>
                            ))}
                          </div>
+                      )}
+
+                      {/* Auditoría Debug (Solo visible para admin) */}
+                      {debugInfo && (
+                        <div className="mt-4 p-4 bg-apple-slate/50 rounded-2xl border border-apple-separator/30 animate-apple shadow-sm">
+                          <div className="flex items-center gap-2 mb-3">
+                            <div className="w-1.5 h-1.5 rounded-full bg-apple-blue animate-pulse"></div>
+                            <div className="text-[10px] font-black uppercase tracking-[0.15em] text-apple-text-tertiary">Auditoría: {debugInfo.name}</div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-y-3 gap-x-6">
+                            <div className="flex flex-col">
+                              <span className="text-[9px] font-bold text-apple-text-tertiary uppercase tracking-wider">Encontradas</span>
+                              <span className="text-[14px] font-black text-apple-black tabular-nums">{debugInfo.total}</span>
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="text-[9px] font-bold text-apple-text-tertiary uppercase tracking-wider">Cobradas</span>
+                              <span className="text-[14px] font-black text-emerald-600 tabular-nums">{debugInfo.collected}</span>
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="text-[9px] font-bold text-apple-text-tertiary uppercase tracking-wider">Ya Pagadas</span>
+                              <span className="text-[14px] font-black text-apple-blue tabular-nums">{debugInfo.alreadyPaid}</span>
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="text-[9px] font-bold text-apple-text-tertiary uppercase tracking-wider">Para Nómina</span>
+                              <span className="text-[14px] font-black text-apple-red tabular-nums">{debugInfo.pending}</span>
+                            </div>
+                          </div>
+                        </div>
                       )}
                    </div>
                 )}
