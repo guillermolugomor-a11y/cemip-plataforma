@@ -4,6 +4,7 @@ import { cn } from '../../../lib/utils';
 import { useAccountingStore } from '../AccountingStore';
 import { useSpecialistStore } from '../../specialists/SpecialistStore';
 import { useAgendaStore } from '../../agenda/AgendaStore';
+import { usePatientStore } from '../../patients/PatientStore';
 
 interface ExpenseModalProps {
   isOpen: boolean;
