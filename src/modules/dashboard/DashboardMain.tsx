@@ -138,7 +138,40 @@ export default function DashboardMain({ patients = [], onNavigate }: { patients?
     }).filter(Boolean)
   , [patients, appointments, todayDate]);
 
-  const hasNotifications = birthdayPatients.length > 0 || absenceAlerts.length > 0;
+  // ── Scheduling Suggestions ──
+  const schedulingSuggestions = React.useMemo(() => {
+    const today = new Date();
+    const tomorrow = new Date();
+    tomorrow.setDate(today.getDate() + 1);
+
+    const getDayName = (d: Date) => d.toLocaleDateString('es-MX', { weekday: 'long' });
+    const getLocalDateStr = (d: Date) => d.toISOString().split('T')[0];
+
+    const todayDayName = getDayName(today).toLowerCase();
+    const tomorrowDayName = getDayName(tomorrow).toLowerCase();
+    const todayStr = getLocalDateStr(today);
+    const tomorrowStr = getLocalDateStr(tomorrow);
+
+    let count = 0;
+    patients.forEach(patient => {
+      const days = (patient.attendanceDays || []).map(d => d.toLowerCase());
+      
+      // Today
+      if (days.includes(todayDayName)) {
+        const hasApt = (appointments || []).some(apt => apt.patientId === patient.id && apt.date === todayStr);
+        if (!hasApt) count++;
+      }
+      
+      // Tomorrow
+      if (days.includes(tomorrowDayName)) {
+        const hasApt = (appointments || []).some(apt => apt.patientId === patient.id && apt.date === tomorrowStr);
+        if (!hasApt) count++;
+      }
+    });
+    return count;
+  }, [patients, appointments]);
+
+  const hasNotifications = birthdayPatients.length > 0 || absenceAlerts.length > 0 || schedulingSuggestions > 0;
 
   const handleEditApt = (apt: any) => {
     setSelectedApt(apt);
@@ -167,11 +200,11 @@ export default function DashboardMain({ patients = [], onNavigate }: { patients?
       </div>
 
       {/* ── Stat Cards ──────────────────────────── */}
-      <div className="flex overflow-x-auto no-scrollbar gap-4 pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:pb-0">
+      <div className="flex overflow-x-auto no-scrollbar gap-4 pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:pb-0 scroll-smooth snap-x">
         <StatCard icon={Users}       title="Pacientes"     value={patients.length.toString()}  color="bg-indigo-50 text-indigo-500" />
         <StatCard icon={Calendar}    title="Citas Hoy"     value={todayApts.length.toString()}  color="bg-emerald-50 text-emerald-500" />
         <StatCard icon={Target}      title="Nuevos"        value={patients.filter(p => p.caseId?.includes('2026')).length.toString()}   color="bg-amber-50 text-amber-500" />
-        <StatCard icon={Bell}        title="Alertas"       value="2"   color="bg-rose-50 text-rose-500" />
+        <StatCard icon={Bell}        title="Alertas"       value={(absenceAlerts.length + birthdayPatients.length + schedulingSuggestions).toString()}   color="bg-rose-50 text-rose-500" />
       </div>
 
       {/* ── Chart & Right Section ────────────────── */}

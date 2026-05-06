@@ -490,12 +490,12 @@ export default function App() {
               </button>
 
               {showNotifications && (
-                <div className="absolute right-0 mt-3 w-80 bg-apple-bg/95 backdrop-blur-xl border border-apple-separator/30 rounded-2xl shadow-apple-huge z-[100] animate-apple overflow-hidden">
+                <div className="absolute right-0 lg:right-0 mt-3 w-[280px] sm:w-80 bg-apple-bg/95 backdrop-blur-xl border border-apple-separator/30 rounded-2xl shadow-apple-huge z-[100] animate-apple overflow-hidden origin-top-right">
                   <div className="px-5 py-4 border-b border-apple-separator/20 bg-apple-slate/30 flex items-center justify-between">
                     <span className="text-[11px] font-bold uppercase tracking-wider text-apple-black">Notificaciones</span>
                     <span className="px-2 py-0.5 bg-apple-blue text-white rounded text-[9px] font-bold">{notifications.length}</span>
                   </div>
-                  <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
+                  <div className="max-h-[min(400px,70vh)] overflow-y-auto custom-scrollbar">
                     {notifications.length === 0 ? (
                       <div className="p-10 text-center text-apple-text-tertiary">
                         <Bell className="w-8 h-8 opacity-20 mx-auto mb-3" />

@@ -27,6 +27,7 @@ import { toJpeg } from 'html-to-image';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { useAccountingStore } from '../accounting/AccountingStore';
+import { useSpecialistStore } from '../specialists/SpecialistStore';
 
 // Helper: Convert human-readable time ("11 am", "04:30 p.m.") to HH:MM format
 function parseTimeToHHMM(raw: string): string {
@@ -327,6 +328,21 @@ const StatRow = ({ label, value, color }: any) => (
 // ────────────────────────────────────────────
 export default function Agenda({ patients }: { patients: any[] }) {
   const { appointments, updateStatus, deleteAppointment, addAppointment, updateAppointment } = useAgendaStore();
+  const { specialists, fetchSpecialists } = useSpecialistStore();
+  
+  // Resolve patient and specialist names
+  const resolvedAppointments = React.useMemo(() => {
+    return (appointments || []).map(apt => {
+      const p = patients?.find(pat => pat.id === apt.patientId);
+      const s = specialists?.find(spec => spec.id === apt.specialistId);
+      return {
+        ...apt,
+        patientName: p?.name || apt.patientName || 'Paciente',
+        specialistName: s?.name || apt.specialistName || 'Especialista'
+      };
+    });
+  }, [appointments, patients, specialists]);
+
   const { addTransaction } = useAccountingStore();
   const exportRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
@@ -349,6 +365,12 @@ export default function Agenda({ patients }: { patients: any[] }) {
 
   const init = React.useMemo(getInitialDates, []);
 
+  React.useEffect(() => {
+    if (specialists.length === 0) {
+      fetchSpecialists();
+    }
+  }, []);
+
   const [viewMode, setViewMode] = useState<'week' | 'day'>('week');
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -367,7 +389,7 @@ export default function Agenda({ patients }: { patients: any[] }) {
   };
 
   const handleStatusChange = (id: string, status: any) => {
-    const apt = appointments.find(a => a.id === id);
+    const apt = resolvedAppointments.find(a => a.id === id);
     if (!apt) return;
 
     if (status === 'completed') {
@@ -445,8 +467,8 @@ export default function Agenda({ patients }: { patients: any[] }) {
   };
 
   const weekDays = getWeekDates(currentDate);
-  const todayApts = appointments.filter(a => a.date === selectedDate).sort((a, b) => a.time.localeCompare(b.time));
-  const weekApts = appointments.filter(a => weekDays.some(d => d.full === a.date));
+  const todayApts = resolvedAppointments.filter(a => a.date === selectedDate).sort((a, b) => a.time.localeCompare(b.time));
+  const weekApts = resolvedAppointments.filter(a => weekDays.some(d => d.full === a.date));
   const statsApts = viewMode === 'day' ? todayApts : weekApts;
 
   const navigateWeek = (d: number) => {
@@ -715,12 +737,53 @@ export default function Agenda({ patients }: { patients: any[] }) {
           )}
         </div>
 
+        {/* Mobile Suggestions */}
+        {showSuggestions && (() => {
+          const selectedDayName = getDayNameES(new Date(selectedDate + 'T12:00:00'));
+          const mobileSuggestions = (patients || []).filter((p: any) => {
+            const attendsToday = p.attendanceDays?.some((d: string) => d.toLowerCase() === selectedDayName.toLowerCase());
+            const alreadyScheduled = todayApts.some((a: any) => a.patientId === p.id);
+            return attendsToday && !alreadyScheduled;
+          });
+
+          if (mobileSuggestions.length === 0) return null;
+
+          return (
+            <div className="space-y-3 animate-apple">
+              <div className="flex items-center gap-2 px-1">
+                <div className="w-1 h-1 bg-apple-blue rounded-full" />
+                <span className="text-[10px] font-black tracking-[0.1em] uppercase text-apple-text-tertiary">Sugerencias para Hoy</span>
+              </div>
+              <div className="grid grid-cols-1 gap-2">
+                {mobileSuggestions.map((p: any) => (
+                  <button
+                    key={p.id}
+                    onClick={() => handleQuickAdd(p, selectedDate)}
+                    className="w-full flex items-center gap-3 p-3 bg-apple-bg border border-apple-separator/40 rounded-2xl hover:border-apple-blue/40 transition-all text-left group"
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-apple-blue/10 text-apple-blue flex items-center justify-center text-[12px] font-black">
+                      {p.name.charAt(0)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[13px] font-bold text-apple-text truncate">{p.name}</div>
+                      <div className="text-[10px] font-bold text-apple-text-tertiary">{formatTime(p.appointmentTime) || '--:--'}</div>
+                    </div>
+                    <div className="w-8 h-8 rounded-lg bg-apple-slate flex items-center justify-center">
+                      <Plus className="w-4 h-4 text-apple-blue" strokeWidth={3} />
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Mobile stats strip */}
         <div className="grid grid-cols-3 gap-3">
           {[
-            { label: 'Total', value: appointments.length, color: 'text-apple-text' },
-            { label: 'Atendidas', value: appointments.filter(a => a.status === 'confirmed').length, color: 'text-apple-green' },
-            { label: 'Canceladas', value: appointments.filter(a => a.status === 'cancelled').length, color: 'text-apple-red' },
+            { label: 'Total', value: resolvedAppointments.length, color: 'text-apple-text' },
+            { label: 'Atendidas', value: resolvedAppointments.filter(a => a.status === 'confirmed').length, color: 'text-apple-green' },
+            { label: 'Canceladas', value: resolvedAppointments.filter(a => a.status === 'cancelled').length, color: 'text-apple-red' },
           ].map(s => (
             <div key={s.label} className="bg-apple-bg border border-apple-separator rounded-2xl p-4 text-center shadow-sm">
               <div className={cn("text-[26px] font-black tabular-nums", s.color)}>{s.value}</div>
@@ -742,7 +805,7 @@ export default function Agenda({ patients }: { patients: any[] }) {
                   <div key={idx} className="flex-1 bg-apple-bg min-w-[140px]">
                     <DayColumn
                       {...d}
-                      appointments={appointments.filter((a: any) => a.date === d.full).sort((a: any, b: any) => a.time.localeCompare(b.time))}
+                      appointments={resolvedAppointments.filter((a: any) => a.date === d.full).sort((a: any, b: any) => a.time.localeCompare(b.time))}
                       onStatusChange={handleStatusChange}
                       onDelete={deleteAppointment}
                       onEdit={(a: Appointment) => handleOpenModal(d.full, a)}

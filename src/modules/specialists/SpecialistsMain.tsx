@@ -16,6 +16,8 @@ import { cn } from '../../lib/utils';
 import { useSpecialistStore } from './SpecialistStore';
 import type { Specialist } from './SpecialistStore';
 import SpecialistModal from './SpecialistModal';
+import { useAgendaStore } from '../agenda/AgendaStore';
+import SpecialistStatsModal from './SpecialistStatsModal';
 
 const AppleIcon = ({ icon: Icon, className = "w-5 h-5", strokeWidth = 1.5 }: any) => (
   <Icon className={className} strokeWidth={strokeWidth} />
@@ -33,13 +35,16 @@ const MetricMini = ({ label, value, colorClass }: any) => (
 
 export default function SpecialistsMain() {
   const { specialists, updateSpecialist, deleteSpecialist, fetchSpecialists, isLoading } = useSpecialistStore();
+  const { appointments, fetchAppointments } = useAgendaStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isStatsModalOpen, setIsStatsModalOpen] = useState(false);
   const [selectedSpecialist, setSelectedSpecialist] = useState<Specialist | undefined>(undefined);
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchSpecialists();
-  }, [fetchSpecialists]);
+    fetchAppointments();
+  }, [fetchSpecialists, fetchAppointments]);
 
 const filteredSpecialists = specialists.filter(s => 
     s.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -128,20 +133,36 @@ const filteredSpecialists = specialists.filter(s =>
             </div>
 
             <div className="flex items-center justify-between border-t border-apple-separator/50 pt-3">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-apple-tertiary rounded-lg border border-apple-separator text-[10px] font-bold uppercase text-apple-text-secondary">
-                <Award className="w-3.5 h-3.5 text-apple-blue" strokeWidth={1.5} /> {s.specialty}
+              <div className="flex flex-col gap-1">
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-apple-tertiary rounded-lg border border-apple-separator text-[10px] font-bold uppercase text-apple-text-secondary w-fit">
+                  <Award className="w-3.5 h-3.5 text-apple-blue" strokeWidth={1.5} /> {s.specialty}
+                </div>
+                <div className="text-[10px] font-bold text-apple-text-tertiary px-1 mt-1">
+                  <span className="text-apple-blue">{appointments.filter(a => a.specialistId === s.id && a.status === 'completed').length}</span> sesiones atendidas
+                </div>
               </div>
-              <button
-                onClick={() => updateSpecialist(s.id, { status: s.status === 'Activo' ? 'Inactivo' : 'Activo' })}
-                className={cn(
-                  "text-[10px] font-bold tracking-widest uppercase px-2.5 py-1 rounded-lg transition-all border",
-                  s.status === 'Activo'
-                    ? "bg-apple-green/10 text-apple-green border-apple-green/20"
-                    : "bg-apple-secondary text-apple-text-tertiary border-apple-separator/50"
-                )}
-              >
-                {s.status}
-              </button>
+              <div className="flex flex-col items-end gap-2">
+                <button
+                  onClick={() => {
+                    setSelectedSpecialist(s);
+                    setIsStatsModalOpen(true);
+                  }}
+                  className="text-[9px] font-black tracking-widest uppercase text-apple-blue hover:underline"
+                >
+                  Ver Actividad
+                </button>
+                <button
+                  onClick={() => updateSpecialist(s.id, { status: s.status === 'Activo' ? 'Inactivo' : 'Activo' })}
+                  className={cn(
+                    "text-[10px] font-bold tracking-widest uppercase px-2.5 py-1 rounded-lg transition-all border",
+                    s.status === 'Activo'
+                      ? "bg-apple-green/10 text-apple-green border-apple-green/20"
+                      : "bg-apple-secondary text-apple-text-tertiary border-apple-separator/50"
+                  )}
+                >
+                  {s.status}
+                </button>
+              </div>
             </div>
           </div>
         ))}
@@ -164,6 +185,14 @@ const filteredSpecialists = specialists.filter(s =>
         onClose={() => setIsModalOpen(false)} 
         specialist={selectedSpecialist}
       />
+
+      {selectedSpecialist && (
+        <SpecialistStatsModal
+          isOpen={isStatsModalOpen}
+          onClose={() => setIsStatsModalOpen(false)}
+          specialist={selectedSpecialist}
+        />
+      )}
     </div>
   );
 }

@@ -53,16 +53,16 @@ const GoalsListView = ({ goals, onGoalClick, filter, setFilter }: any) => {
       </div>
       
       <div className="bg-apple-bg rounded-2xl shadow-apple-soft border border-apple-separator/50 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse min-w-[800px]">
+        <div className="overflow-x-auto no-scrollbar">
+          <table className="w-full text-left border-collapse min-w-[700px] sm:min-w-full">
             <thead>
               <tr className="bg-apple-secondary/30 border-b border-apple-separator/50">
-                <th className="py-4 px-6 text-[10px] font-bold uppercase tracking-widest text-apple-text-tertiary w-[30%]">Iniciativa / Meta</th>
-                <th className="py-4 px-4 text-[10px] font-bold uppercase tracking-widest text-apple-text-tertiary w-[12%]">Prioridad</th>
-                <th className="py-4 px-4 text-[10px] font-bold uppercase tracking-widest text-apple-text-tertiary w-[15%]">Categoría</th>
-                <th className="py-4 px-4 text-[10px] font-bold uppercase tracking-widest text-apple-text-tertiary w-[18%]">Responsable</th>
-                <th className="py-4 px-4 text-[10px] font-bold uppercase tracking-widest text-apple-text-tertiary w-[13%]">Fecha Límite</th>
-                <th className="py-4 px-6 text-[10px] font-bold uppercase tracking-widest text-apple-text-tertiary w-[12%] text-center">Estado</th>
+                <th className="py-4 px-6 text-[10px] font-bold uppercase tracking-widest text-apple-text-tertiary w-[35%] sm:w-[30%]">Iniciativa / Meta</th>
+                <th className="py-4 px-4 text-[10px] font-bold uppercase tracking-widest text-apple-text-tertiary w-[15%] sm:w-[12%]">Prioridad</th>
+                <th className="hidden md:table-cell py-4 px-4 text-[10px] font-bold uppercase tracking-widest text-apple-text-tertiary w-[15%]">Categoría</th>
+                <th className="py-4 px-4 text-[10px] font-bold uppercase tracking-widest text-apple-text-tertiary w-[20%] sm:w-[18%]">Responsable</th>
+                <th className="hidden sm:table-cell py-4 px-4 text-[10px] font-bold uppercase tracking-widest text-apple-text-tertiary w-[13%]">Fecha</th>
+                <th className="py-4 px-6 text-[10px] font-bold uppercase tracking-widest text-apple-text-tertiary w-[15%] sm:w-[12%] text-center">Estado</th>
               </tr>
             </thead>
             <tbody>
@@ -71,31 +71,24 @@ const GoalsListView = ({ goals, onGoalClick, filter, setFilter }: any) => {
               )}
               {filteredGoals.map((g: any) => (
                 <tr key={g.id} onClick={() => onGoalClick(g)} className="border-b border-apple-separator/20 hover:bg-apple-secondary/40 cursor-pointer transition-colors group">
-                  <td className="py-4 px-6 flex items-start gap-4">
-                    <div className="mt-0.5 text-apple-text-tertiary group-hover:text-apple-blue transition-colors">
-                      {g.status === 'achieved' ? <CheckCircle2 className="w-5 h-5 text-apple-green" /> : <Circle className="w-5 h-5" />}
-                    </div>
-                    <div>
-                      <div className={cn("text-[14px] font-bold leading-snug", g.status === 'achieved' ? "text-apple-text-tertiary line-through" : "text-apple-text")}>{g.title}</div>
-                      <div className="flex items-center gap-3 mt-1.5">
-                        {g.subtasks?.length > 0 && (
-                          <div className="text-[10px] font-bold text-apple-text-secondary bg-apple-secondary px-1.5 py-0.5 rounded flex items-center gap-1">
-                            <ListChecks className="w-3 h-3" />
-                            {g.subtasks.filter((s:any)=>s.completed).length}/{g.subtasks.length}
+                  <td className="py-4 px-6">
+                    <div className="flex items-start gap-4">
+                      <div className="mt-0.5 text-apple-text-tertiary group-hover:text-apple-blue transition-colors shrink-0">
+                        {g.status === 'achieved' ? <CheckCircle2 className="w-5 h-5 text-apple-green" /> : <Circle className="w-5 h-5" />}
+                      </div>
+                      <div className="min-w-0">
+                        <div className={cn("text-[14px] font-bold leading-snug truncate", g.status === 'achieved' ? "text-apple-text-tertiary line-through" : "text-apple-text")}>{g.title}</div>
+                        <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+                          {g.subtasks?.length > 0 && (
+                            <div className="text-[10px] font-bold text-apple-text-secondary bg-apple-secondary px-1.5 py-0.5 rounded flex items-center gap-1">
+                              <ListChecks className="w-3 h-3" />
+                              {g.subtasks.filter((s:any)=>s.completed).length}/{g.subtasks.length}
+                            </div>
+                          )}
+                          <div className="sm:hidden text-[9px] font-black uppercase text-apple-text-tertiary flex items-center gap-1">
+                            <Calendar className="w-3 h-3" /> {g.targetDate || 'S/F'}
                           </div>
-                        )}
-                        {g.comments?.length > 0 && (
-                          <div className="text-[10px] font-bold text-apple-text-secondary bg-apple-secondary px-1.5 py-0.5 rounded flex items-center gap-1">
-                            <MessageSquare className="w-3 h-3" />
-                            {g.comments.length}
-                          </div>
-                        )}
-                        {g.attachments?.length > 0 && (
-                          <div className="text-[10px] font-bold text-apple-text-secondary bg-apple-secondary px-1.5 py-0.5 rounded flex items-center gap-1">
-                            <Paperclip className="w-3 h-3" />
-                            {g.attachments.length}
-                          </div>
-                        )}
+                        </div>
                       </div>
                     </div>
                   </td>
@@ -106,7 +99,7 @@ const GoalsListView = ({ goals, onGoalClick, filter, setFilter }: any) => {
                       </div>
                     )}
                   </td>
-                  <td className="py-4 px-4">
+                  <td className="hidden md:table-cell py-4 px-4">
                      {g.category && (
                       <div className="px-2 py-1 rounded bg-apple-secondary text-apple-text-secondary text-[9px] font-bold tracking-widest uppercase inline-flex items-center gap-1 border border-apple-separator/50">
                         {g.category}
@@ -114,30 +107,30 @@ const GoalsListView = ({ goals, onGoalClick, filter, setFilter }: any) => {
                     )}
                   </td>
                   <td className="py-4 px-4">
-                    <div className="flex items-center gap-2.5">
-                       <div className="w-7 h-7 rounded-full bg-apple-blue/10 text-apple-blue flex items-center justify-center text-[10px] font-black uppercase">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                       <div className="w-7 h-7 rounded-full bg-apple-blue/10 text-apple-blue flex items-center justify-center text-[10px] font-black uppercase shrink-0">
                          {g.responsible ? g.responsible.charAt(0) : 'E'}
                        </div>
                        <span className="text-[12px] font-bold text-apple-text-secondary truncate">{g.responsible || 'Equipo'}</span>
                     </div>
                   </td>
-                  <td className="py-4 px-4">
+                  <td className="hidden sm:table-cell py-4 px-4">
                      <div className={cn("flex items-center gap-1.5 text-[11px] font-bold uppercase", g.status === 'achieved' ? "text-apple-green" : "text-apple-text-secondary")}>
                        <Calendar className="w-3.5 h-3.5" />
-                       {g.targetDate || 'Sin Fecha'}
+                       {g.targetDate || 'S/F'}
                      </div>
                   </td>
                   <td className="py-4 px-6">
                     <div className="flex flex-col items-center gap-1.5">
-                      <span className={cn("text-[9px] font-bold tracking-widest uppercase px-2 py-0.5 rounded-full border", 
+                      <span className={cn("text-[9px] font-bold tracking-widest uppercase px-2 py-0.5 rounded-full border whitespace-nowrap", 
                          g.status === 'achieved' ? "bg-apple-green/10 text-apple-green border-apple-green/20" : 
                          g.status === 'in_progress' ? "bg-apple-blue/10 text-apple-blue border-apple-blue/20" : 
                          "bg-apple-secondary text-apple-text-tertiary border-apple-separator/50"
                        )}>
-                         {g.status === 'achieved' ? 'Lograda' : g.status === 'in_progress' ? 'En Progreso' : 'Por Hacer'}
+                         {g.status === 'achieved' ? 'Lograda' : g.status === 'in_progress' ? 'Progreso' : 'Pendiente'}
                        </span>
                       <div className="flex items-center gap-2 w-full mt-0.5">
-                        <div className="flex-1 h-1.5 bg-apple-secondary rounded-full overflow-hidden">
+                        <div className="flex-1 h-1.5 bg-apple-secondary rounded-full overflow-hidden min-w-[40px]">
                           <div className={cn("h-full transition-all", g.status === 'achieved' ? 'bg-apple-green' : 'bg-apple-blue')} style={{ width: `${g.progress}%` }} />
                         </div>
                         <span className="text-[10px] font-black tabular-nums text-apple-text">{g.progress}%</span>
@@ -438,10 +431,10 @@ const GoalModal = ({ isOpen, onClose, onSave, initialData, specialists }: any) =
   };
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 animate-apple">
+    <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-0 sm:p-6 animate-apple">
       <div className="fixed inset-0 bg-black/40 backdrop-blur-sm transition-opacity" onClick={onClose} />
       
-      <div className="bg-apple-bg w-full max-w-[500px] flex flex-col rounded-apple shadow-2xl relative z-10 overflow-hidden border border-apple-separator">
+      <div className="bg-apple-bg w-full max-w-[500px] flex flex-col sm:rounded-apple rounded-t-[32px] shadow-2xl relative z-10 overflow-hidden border border-apple-separator max-h-[95vh] sm:max-h-[90vh]">
         <div className="px-8 py-6 border-b border-apple-separator flex items-center justify-between bg-apple-secondary/30 shrink-0">
           <div className="flex items-center gap-4">
              <div className="w-10 h-10 bg-apple-blue/10 rounded-lg flex items-center justify-center">
@@ -465,7 +458,7 @@ const GoalModal = ({ isOpen, onClose, onSave, initialData, specialists }: any) =
              <input type="text" value={form.title} onChange={e => setForm({...form, title: e.target.value})} placeholder="Ej: Renovar material didáctico" className="w-full bg-apple-tertiary border border-apple-separator/50 rounded-xl py-3 px-4 text-[13px] font-medium text-apple-text focus:ring-1 focus:ring-apple-blue/30 outline-none" />
            </div>
 
-           <div className="grid grid-cols-2 gap-4">
+           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
              <div className="space-y-1.5">
                <label className="text-[10px] uppercase font-bold text-apple-text-tertiary ml-1 tracking-widest">Categoría</label>
                <select 
@@ -545,7 +538,7 @@ const GoalModal = ({ isOpen, onClose, onSave, initialData, specialists }: any) =
              <textarea value={form.indicator} onChange={e => setForm({...form, indicator: e.target.value})} placeholder="Notas extras..." className="w-full bg-apple-tertiary border border-apple-separator/50 rounded-xl py-3 px-4 text-[13px] font-medium text-apple-text focus:ring-1 focus:ring-apple-blue/30 outline-none min-h-[60px] resize-none" />
            </div>
            
-           <div className="grid grid-cols-2 gap-4">
+           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
              <div className="space-y-1.5">
                <label className="text-[10px] uppercase font-bold text-apple-text-tertiary ml-1 tracking-widest">Asignado a</label>
                <select 
@@ -608,7 +601,7 @@ const GoalModal = ({ isOpen, onClose, onSave, initialData, specialists }: any) =
              </div>
 
              {form.attachments.length > 0 && (
-               <div className="grid grid-cols-2 gap-3">
+               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                  {form.attachments.map((file: any) => (
                    <div key={file.id} className="bg-apple-secondary/50 border border-apple-separator/40 rounded-xl p-3 flex items-start gap-3 relative group">
                      <button 
@@ -862,23 +855,23 @@ export default function TeamGoalsMain() {
       </header>
 
       {/* Banner */}
-      <div className="bg-gradient-to-r from-apple-blue/10 to-indigo-500/10 border border-apple-blue/20 rounded-[24px] p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 relative overflow-hidden shadow-apple-soft shrink-0">
-        <div className="flex items-center gap-4 relative z-10">
+      <div className="bg-gradient-to-r from-apple-blue/10 to-indigo-500/10 border border-apple-blue/20 rounded-[24px] p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden shadow-apple-soft shrink-0">
+        <div className="flex items-center gap-4 relative z-10 w-full sm:w-auto">
           <div className="w-12 h-12 bg-apple-bg rounded-2xl flex items-center justify-center shadow-sm shrink-0 border border-apple-separator/40">
             <Target className="text-apple-blue w-6 h-6" strokeWidth={2} />
           </div>
-          <div>
+          <div className="flex-1 min-w-0">
             <div className="text-[10px] font-black tracking-widest text-apple-blue uppercase mb-1">Iniciativas Institucionales</div>
             <div className="flex items-center gap-3">
-              <div className="w-32 h-2 bg-apple-bg/50 border border-apple-separator/50 rounded-full overflow-hidden shadow-inner">
+              <div className="flex-1 sm:w-32 h-2 bg-apple-bg/50 border border-apple-separator/50 rounded-full overflow-hidden shadow-inner max-w-[150px]">
                 <div className="h-full bg-apple-blue rounded-full shadow-[0_0_8px_rgba(19,88,255,0.5)] transition-all duration-1000" style={{ width: `${globalProgress}%` }} />
               </div>
               <span className="text-[14px] font-black text-apple-blue tabular-nums">{globalProgress}%</span>
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-4 text-apple-text-secondary relative z-10 w-full sm:w-auto">
-          <div className="bg-apple-bg/80 border border-apple-separator/40 px-4 py-2.5 rounded-xl flex-1 sm:flex-none">
+        <div className="flex items-center gap-4 text-apple-text-secondary relative z-10 w-full md:w-auto">
+          <div className="bg-apple-bg/80 border border-apple-separator/40 px-4 py-2.5 rounded-xl flex-1 md:flex-none">
             <div className="text-[9px] uppercase tracking-widest font-bold text-apple-text-tertiary mb-0.5">Total Metas</div>
             <div className="text-[14px] font-black text-apple-text tabular-nums">{teamGoals.length}</div>
           </div>
