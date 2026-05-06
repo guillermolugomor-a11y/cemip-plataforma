@@ -154,7 +154,7 @@ export default function DashboardMain({ patients = [], onNavigate }: { patients?
 
     let count = 0;
     patients.forEach(patient => {
-      const days = (patient.attendanceDays || []).map(d => d.toLowerCase());
+      const days = (patient.attendanceDays || []).map((d: any) => d.toLowerCase());
       
       // Today
       if (days.includes(todayDayName)) {
