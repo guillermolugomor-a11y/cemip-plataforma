@@ -135,7 +135,10 @@ export default function RegistrationModal({ isOpen, onClose, onSave, patient, is
   };
 
   const nextStep = () => {
-    if (step === 1 && (!formData.name || !formData.lastNamePaterno)) return;
+    if (step === 1 && (!formData.name || !formData.lastNamePaterno)) {
+      toast.error('Por favor ingresa al menos Nombre y Apellido Paterno');
+      return;
+    }
     setStep(s => Math.min(s + 1, 4));
   };
   const prevStep = () => setStep(s => Math.max(s - 1, 1));

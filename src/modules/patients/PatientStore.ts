@@ -70,6 +70,36 @@ export const usePatientStore = create<PatientState>()((set, get) => ({
   },
 
   addPatient: async (p) => {
+    // 1. GUARDADO OPTIMISTA
+    const tempId = crypto.randomUUID();
+    const optimisticPatient: Patient = {
+      id: tempId,
+      caseId: p.caseId,
+      name: p.name,
+      lastNamePaterno: p.lastNamePaterno,
+      lastNameMaterno: p.lastNameMaterno,
+      age: p.age,
+      gender: p.gender as any,
+      birthDate: p.birthDate,
+      tutor: p.tutor || '',
+      relationship: p.relationship || '',
+      phone: p.phone || '',
+      email: p.email,
+      consultReason: p.consultReason,
+      initialNotes: p.initialNotes,
+      attendanceDays: p.attendanceDays || [],
+      appointmentTime: p.appointmentTime,
+      sessionCost: p.sessionCost || 0,
+      requiresInvoice: p.requiresInvoice || false,
+      schoolName: p.schoolName,
+      schoolPhone: p.schoolPhone,
+      schoolEmail: p.schoolEmail,
+      schoolGrade: p.schoolGrade,
+      schoolGroup: p.schoolGroup,
+    };
+
+    set((state) => ({ patients: [optimisticPatient, ...state.patients] }));
+
     try {
       const dbPayload = {
         case_id: p.caseId,
@@ -144,36 +174,19 @@ export const usePatientStore = create<PatientState>()((set, get) => ({
         throw lastError || new Error('No se pudo conectar al servidor tras múltiples intentos');
       }
 
-      const newPatient: Patient = {
-        id: resData.id,
-        caseId: resData.case_id,
-        name: resData.name,
-        lastNamePaterno: resData.last_name_paterno || undefined,
-        lastNameMaterno: resData.last_name_materno || undefined,
-        age: resData.age || 0,
-        gender: resData.gender as any,
-        birthDate: resData.birth_date || undefined,
-        tutor: resData.tutor || '',
-        relationship: resData.relationship || '',
-        phone: resData.phone || '',
-        email: resData.email || undefined,
-        consultReason: resData.consult_reason || undefined,
-        initialNotes: resData.initial_notes || undefined,
-        attendanceDays: resData.attendance_days || [],
-        appointmentTime: resData.appointment_time || undefined,
-        sessionCost: resData.session_cost || 0,
-        requiresInvoice: resData.requires_invoice || false,
-        schoolName: resData.school_name || undefined,
-        schoolPhone: resData.school_phone || undefined,
-        schoolEmail: resData.school_email || undefined,
-        schoolGrade: resData.school_grade || undefined,
-        schoolGroup: resData.school_group || undefined,
-      };
+      // Reemplazar el ID temporal con el real de la DB
+      set(state => ({
+        patients: state.patients.map(pat => pat.id === tempId ? {
+          ...pat,
+          id: resData.id
+        } : pat)
+      }));
 
-      set((state) => ({ patients: [newPatient, ...state.patients] }));
-      return newPatient;
+      return { ...optimisticPatient, id: resData.id };
     } catch (err: any) {
       console.error('Error adding patient:', err);
+      // Rollback
+      set(state => ({ patients: state.patients.filter(pat => pat.id !== tempId) }));
       toast.error(`Error de conexión: ${err.message || 'No se pudo registrar el paciente'}`);
       throw err;
     }
