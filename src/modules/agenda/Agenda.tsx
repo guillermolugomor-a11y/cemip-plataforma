@@ -258,16 +258,54 @@ const DayColumn = ({ day, date, full, fullDate, fullDay, isActive, appointments,
 // ────────────────────────────────────────────
 // Timeline Day View
 // ────────────────────────────────────────────
-const TimelineView = ({ date, appointments, onStatusChange, onDelete, onEdit, isExporting }: any) => {
-  let hours = Array.from({ length: 13 }, (_, i) => i + 8); // 8:00 to 20:00
+const TimelineView = ({ date, appointments, onStatusChange, onDelete, onEdit, isExporting, onDateChange }: any) => {
+  let hours = Array.from({ length: 13 }, (_, i) => i + 8); // Base: 8:00 to 20:00
 
-  if (isExporting && appointments && appointments.length > 0) {
-    const minHour = Math.min(...appointments.map((a: any) => parseInt(a.time.split(':')[0], 10)));
-    const maxHour = Math.max(...appointments.map((a: any) => parseInt(a.time.split(':')[0], 10)));
-    hours = hours.filter(h => h >= minHour && h <= Math.min(20, maxHour + 1));
+  if (appointments && appointments.length > 0) {
+    const minAptHour = Math.min(...appointments.map((a: any) => parseInt((a.time || '09:00').split(':')[0], 10)));
+    const maxAptHour = Math.max(...appointments.map((a: any) => parseInt((a.time || '09:00').split(':')[0], 10)));
+    
+    // Expandir el rango si hay citas fuera del horario comercial (8-20)
+    const startHour = Math.min(8, minAptHour);
+    const endHour = Math.max(20, maxAptHour);
+    
+    hours = Array.from({ length: endHour - startHour + 1 }, (_, i) => i + startHour);
+
+    if (isExporting) {
+      // Si estamos exportando, comprimimos la vista solo a las horas necesarias
+      hours = hours.filter(h => h >= minAptHour && h <= Math.min(endHour, maxAptHour + 1));
+    }
   }
 
   const containerRef = React.useRef<HTMLDivElement>(null);
+  const lastScrolledDateRef = React.useRef<string | null>(null);
+
+  React.useEffect(() => {
+    if (isExporting) return;
+    
+    if (appointments && appointments.length > 0) {
+      if (lastScrolledDateRef.current !== date) {
+        const minHour = Math.min(...appointments.map((a: any) => parseInt((a.time || '09:00').split(':')[0], 10)));
+        const element = document.getElementById(`hour-block-${minHour}`);
+        if (element && containerRef.current) {
+          setTimeout(() => {
+            if (containerRef.current && element) {
+              containerRef.current.scrollTo({
+                top: Math.max(0, element.offsetTop - 24),
+                behavior: 'smooth'
+              });
+              lastScrolledDateRef.current = date;
+            }
+          }, 100);
+        }
+      }
+    } else if (appointments?.length === 0) {
+      if (lastScrolledDateRef.current !== date && containerRef.current) {
+         containerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+         lastScrolledDateRef.current = date;
+      }
+    }
+  }, [date, appointments, isExporting]);
 
   return (
     <div className="bg-apple-bg rounded-apple-xl border border-apple-separator/40 overflow-hidden flex-1 shadow-apple-soft">
@@ -278,7 +316,20 @@ const TimelineView = ({ date, appointments, onStatusChange, onDelete, onEdit, is
           </div>
           <h3 className="font-bold text-apple-black text-[15px] tracking-tight">Timeline del Día</h3>
         </div>
-        <div className="px-4 py-1.5 bg-apple-bg rounded-xl border border-apple-separator/30 text-[11px] font-bold text-apple-blue shadow-apple-soft cursor-default uppercase tracking-widest">{date}</div>
+        <div className="flex items-center gap-2">
+          {onDateChange ? (
+            <input 
+              type="date" 
+              value={date} 
+              onChange={(e) => {
+                if(e.target.value) onDateChange(e.target.value);
+              }}
+              className="px-4 py-1.5 bg-apple-bg rounded-xl border border-apple-separator/30 text-[11px] font-bold text-apple-blue shadow-apple-soft uppercase tracking-widest outline-none focus:border-apple-blue"
+            />
+          ) : (
+            <div className="px-4 py-1.5 bg-apple-bg rounded-xl border border-apple-separator/30 text-[11px] font-bold text-apple-blue shadow-apple-soft cursor-default uppercase tracking-widest">{date}</div>
+          )}
+        </div>
       </div>
       <div className={cn("p-6 sm:p-10 custom-scrollbar", !isExporting && "overflow-y-auto max-h-[72vh]")} ref={containerRef}>
         <div className="relative">
@@ -642,10 +693,28 @@ export default function Agenda({ patients }: { patients: any[] }) {
             <h2 className="text-[20px] sm:text-[22px] font-bold tracking-tight text-apple-text capitalize">{monthLabel}</h2>
           </div>
           <div className="flex gap-1 ml-2 no-print">
-            <button onClick={() => navigateWeek(-1)} className="p-2 bg-apple-bg border border-apple-separator rounded-xl text-apple-text-secondary hover:text-apple-blue transition-all shadow-sm">
+            <button onClick={() => {
+              if (viewMode === 'week') {
+                navigateWeek(-1);
+              } else {
+                const nd = new Date(selectedDate + 'T12:00:00');
+                nd.setDate(nd.getDate() - 1);
+                setSelectedDate(nd.toISOString().split('T')[0]);
+                setCurrentDate(nd);
+              }
+            }} className="p-2 bg-apple-bg border border-apple-separator rounded-xl text-apple-text-secondary hover:text-apple-blue transition-all shadow-sm">
               <ChevronLeft className="w-4 h-4" strokeWidth={2.5} />
             </button>
-            <button onClick={() => navigateWeek(1)} className="p-2 bg-apple-bg border border-apple-separator rounded-xl text-apple-text-secondary hover:text-apple-blue transition-all shadow-sm">
+            <button onClick={() => {
+              if (viewMode === 'week') {
+                navigateWeek(1);
+              } else {
+                const nd = new Date(selectedDate + 'T12:00:00');
+                nd.setDate(nd.getDate() + 1);
+                setSelectedDate(nd.toISOString().split('T')[0]);
+                setCurrentDate(nd);
+              }
+            }} className="p-2 bg-apple-bg border border-apple-separator rounded-xl text-apple-text-secondary hover:text-apple-blue transition-all shadow-sm">
               <ChevronRight className="w-4 h-4" strokeWidth={2.5} />
             </button>
           </div>
@@ -821,7 +890,7 @@ export default function Agenda({ patients }: { patients: any[] }) {
               </div>
             </div>
           ) : (
-            <TimelineView date={selectedDate} appointments={todayApts} onStatusChange={handleStatusChange} onDelete={deleteAppointment} onEdit={(a: Appointment) => handleOpenModal(selectedDate, a)} isExporting={isExporting} />
+            <TimelineView date={selectedDate} appointments={todayApts} onStatusChange={handleStatusChange} onDelete={deleteAppointment} onEdit={(a: Appointment) => handleOpenModal(selectedDate, a)} isExporting={isExporting} onDateChange={(newDate: string) => { setSelectedDate(newDate); setCurrentDate(new Date(newDate + 'T12:00:00')); }} />
           )}
         </div>
 

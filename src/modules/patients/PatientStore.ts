@@ -96,15 +96,54 @@ export const usePatientStore = create<PatientState>()((set, get) => ({
         school_group: p.schoolGroup,
       };
 
-      const { data, error } = await (supabase
-        .from('patients') as any)
-        .insert(dbPayload)
-        .select()
-        .single();
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      
+      let resData = null;
+      let lastError: any = null;
+      const maxRetries = 3;
 
-      if (error) throw error;
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          if (attempt > 1) {
+            await new Promise(resolve => setTimeout(resolve, attempt * 1000));
+          }
 
-      const resData = data as any;
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+          const response = await fetch(`${supabaseUrl}/rest/v1/patients`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'apikey': supabaseKey,
+              'Authorization': `Bearer ${supabaseKey}`,
+              'Prefer': 'return=representation'
+            },
+            body: JSON.stringify(dbPayload),
+            signal: controller.signal
+          });
+
+          clearTimeout(timeoutId);
+
+          if (!response.ok) {
+            const errorBody = await response.text();
+            throw new Error(`HTTP ${response.status}: ${errorBody}`);
+          }
+
+          const responseData = await response.json();
+          resData = Array.isArray(responseData) ? responseData[0] : responseData;
+          break; // Exit loop on success
+        } catch (err: any) {
+          lastError = err;
+          console.warn(`PatientStore: Fallo en intento ${attempt} al crear paciente:`, err.message || err);
+        }
+      }
+
+      if (!resData) {
+        throw lastError || new Error('No se pudo conectar al servidor tras múltiples intentos');
+      }
+
       const newPatient: Patient = {
         id: resData.id,
         caseId: resData.case_id,
@@ -135,7 +174,7 @@ export const usePatientStore = create<PatientState>()((set, get) => ({
       return newPatient;
     } catch (err: any) {
       console.error('Error adding patient:', err);
-      toast.error(`Error de base de datos: ${err.message || 'No se pudo registrar el paciente'}`);
+      toast.error(`Error de conexión: ${err.message || 'No se pudo registrar el paciente'}`);
       throw err;
     }
   },
